@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="500" 
+	paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import flash.filesystem.File;
+			
+			private var dwTypes:ArrayCollection = new ArrayCollection([
+				{label:"Behavior", data:"behavior"},
+				{label:"Browser Profile", data:"browserprofile"},
+				{label:"Code Hint / Code Snippet", data:"codehint codesnippet"},
+				{label:"Coloring Scheme", data:"coloringscheme"},
+				{label:"Command", data:"command"},
+				{label:"Connection", data:"connection"},
+				{label:"Data Source", data:"datasource"},
+				{label:"Dictionary", data:"dictionary"},
+				{label:"Document Type", data:"documenttype"},
+				{label:"Encoding", data:"encoding"},
+				{label:"Flash Button Style", data:"flashbuttonstyle"},
+				{label:"Flash Element", data:"flashelement"},
+				{label:"Floater", data:"floater"},
+				{label:"Insert Bar", data:"insertbar"},
+				{label:"JS Extension", data:"jsextension"},
+				{label:"Keyboard Shortcut", data:"keyboard shortcut"},
+				{label:"Object", data:"object"},
+				{label:"Plugin", data:"plugin"},
+				{label:"Property Inspector", data:"propertyinspector"},
+				{label:"Report", data:"report"},
+				{label:"Reference Book", data:"referencebook"},
+				{label:"Sample Content", data:"samplecontent"},
+				{label:"Server Behavior", data:"serverbehavior"},
+				{label:"Server Format", data:"serverformat"},
+				{label:"Server Model", data:"servermodel"},
+				{label:"Site", data:"site"},
+				{label:"Suite", data:"suite"},
+				{label:"Tag Library", data:"taglibrary"},
+				{label:"Template", data:"template"},
+				{label:"Third Party Tags", data:"thirdpartytags"},
+				{label:"Toolbar", data:"toolbar"},
+				{label:"Translator", data:"translator"},
+				{label:"Utility", data:"utility"},
+				{label:"Query", data:"query"}
+			]);
+			
+			private var fwTypes:ArrayCollection = new ArrayCollection([
+				{label:"Autoshape", data:"autoshape"},
+				{label:"Command", data:"command"},
+				{label:"Command Panel", data:"commandpanel"},
+				{label:"Dictionary", data:"dictionary"},
+				{label:"Keyboard Shortcut", data:"keyboard shortcut"},
+				{label:"Library", data:"library"},
+				{label:"Pattern", data:"pattern"},
+				{label:"Texture", data:"texture"}
+			]);
+			
+			private var flTypes:ArrayCollection = new ArrayCollection([
+				{label:"ActionScript", data:"actionscript"},
+				{label:"Flash Component", data:"flashcomponent"},
+				{label:"Flash Custom Action", data:"flashcustomaction"},
+				{label:"Flash Importer", data:"flashimporter"},
+				{label:"Flash Panel", data:"flashpanel"},
+				{label:"Flash Template", data:"flashtemplate"},
+				{label:"Generator Object (Flash 5 & earlier)", data:"generatorobject"},
+				{label:"Keyboard Shortcut", data:"keyboardshortcut"},
+				{label:"Lesson", data:"lesson"},
+				{label:"Library", data:"library"},
+				{label:"Publish Template", data:"publishtemplate"},
+				{label:"Sample", data:"sample"},
+				{label:"SmartClip", data:"smartclip"},
+				{label:"Utility", data:"utility"}
+			]);
+		
+			public function reset():void {
+				txtName.text = "";
+				txtName.errorString = "";
+				txtVersion.text = "";
+				txtVersion.errorString = "";
+				txtMXIVersion.text = "";
+				txtXManVersion.text = "";
+				txtIcon.text = "";
+				ddType.dataProvider = new ArrayCollection([]);
+				cbRestart.selected = false;
+				cbLingual.selected = false;
+				ddManType.selectedIndex = 0;
+				cbFiles.selected = true;
+				cbQuit.selected = false;
+				txtNameResID.text = "";
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				if("@name" in value) txtName.text = value.@name;
+				if("@version" in value) txtVersion.text = value.@version;
+				if("@mxiversion" in value) txtMXIVersion.text = value.@mxiversion;
+				if("@xmanversion" in value) txtXManVersion.text = value.@xmanversion;
+				if("@icon" in value) txtIcon.text = value.@icon;
+				
+				var strType:String = String(value.@type).toLowerCase().split(" ").join("");
+				var isFound:Boolean = searchTypes(strType, dwTypes, ddTargetApp.dataProvider[1]);
+				if(!isFound) isFound = searchTypes(strType, fwTypes, ddTargetApp.dataProvider[2]);
+				if(!isFound) isFound = searchTypes(strType, flTypes, ddTargetApp.dataProvider[3]);
+				
+				if("@requires-restart" in value && value.@["requires-restart"].toString() == "true") {
+					cbRestart.selected = true;
+				}
+				
+				if("@ismultilingual" in value && value.@ismultilingual.toString() == "true") {
+					cbLingual.selected = true;
+				}
+				
+				if("@name_resid" in value) txtNameResID.text = value.@name_resid;
+				
+				if("@plugin-manager-type" in value) {
+					for(var i:String in ddManType.dataProvider) {
+						if(ddManType.dataProvider[i].data == value["@plugin-manager-type"].toString()) {
+							ddManType.selectedItem = ddManType.dataProvider[i];
+							break;
+						}
+					}
+				}
+				
+				if("@show-files" in value && value["@show-files"].toString() == "false") {
+					cbFiles.selected = false;
+				}
+				
+				if("@force-quit" in value && value["@force-quit"].toString() == "true") {
+					cbQuit.selected = true;
+				}
+			}
+		
+			public function getXML():String {
+				var str:String = "<macromedia-extension";
+				str += ' name="' + txtName.text + '"';
+				str += ' version="' + txtVersion.text + '"';
+				
+				// Optional attribute for version 2.x that degrades gracefully
+				if(txtMXIVersion.text.length > 0) {
+					str += ' mxiversion="' + txtMXIVersion.text + '"';
+				} else {
+					str += ' mxiversion="1.0"';
+				}
+				// Optional attribute for version 2.x that degrades gracefully
+				if(txtXManVersion.text.length > 0) {
+					str += ' xmanversion="' + txtXManVersion.text + '"';
+				}
+				// Optional attribute for version 2.x that DOES NOT degrade gracefully
+				if(txtIcon.text.length > 0) {
+					str += ' icon="' + txtIcon.text + '"';
+				}
+				// Optional attribute applies only to Dreamweaver, Fireworks, and Flash.
+				if(ddType.selectedItem && ddType.selectedItem.data.length > 0) {
+					str += ' type="' + ddType.selectedItem.data + '"';
+				}
+				// Optional attribute
+				if(cbRestart.selected) str += ' requires-restart="' + cbRestart.selected + '"';
+				
+				// Optional attribute for version 2.1
+				if(cbLingual.selected) str += ' ismultilingual="' + cbLingual.selected + '"';
+				
+				// Optional attribute for version 2.1
+				if(txtNameResID.text.length > 0) {
+					str += ' name_resid="' + txtNameResID.text + '"';
+				}
+				
+				// Optional attribute applies only to InDesign and InCopy CS5
+				if(ddManType.selectedItem && ddManType.selectedItem.data.length > 0) {
+					str += ' plugin-manager-type="' + ddManType.selectedItem.data + '"';
+				}
+				// Optional attribute applies only to InDesign and InCopy CS5
+				if(!cbFiles.selected) str += ' show-files="' + cbFiles.selected + '"';
+				
+				// Optional attribute
+				if(cbQuit.selected) str += ' force-quit="' + cbQuit.selected + '"';
+				
+				str += ' >';
+				
+				return str;
+			}
+			
+			private function searchTypes(type:String, dp:ArrayCollection, typeObject:Object):Boolean {
+				for(var i:String in dp) {
+					var strLabel:String = String(dp[i].label).toLowerCase().split(" ").join("");
+					var strData:String = String(dp[i].data).toLowerCase().split(" ").join("");
+					if(strLabel == type || strData == type) {
+						ddType.dataProvider = dp;
+						ddType.selectedItem = ddType.dataProvider[i];
+						ddType.enabled = true;
+						ddTargetApp.selectedItem = typeObject;
+						return true;
+					}
+				}
+				
+				return false;
+			}
+			
+			private function onClickBrowse():void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			private function onFileSelection(event:Event):void {
+				txtIcon.text = flash.filesystem.File(event.target).nativePath;
+			}
+			
+			private function onSelectApp(event:Event):void {
+				switch(event.target.selectedItem.data) {
+					case "dw" :
+						ddType.dataProvider = dwTypes;
+						ddType.selectedIndex = 0;
+						ddType.enabled = true;
+						break;
+					case "fw" :
+						ddType.dataProvider = fwTypes;
+						ddType.selectedIndex = 0;
+						ddType.enabled = true;
+						break;
+					case "fl" :
+						ddType.dataProvider = flTypes;
+						ddType.selectedIndex = 0;
+						ddType.enabled = true;
+						break;
+					default :
+						ddType.dataProvider = null;
+						ddType.enabled = false;
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valName" required="true" source="{txtName}" property="text" />
+	<mx:StringValidator id="valVersion" required="true" source="{txtVersion}" property="text" />
+	
+	<mx:FormHeading label="Extension"  width="100%" toolTip="Main tag for extension installation file."/>
+	
+	<mx:FormItem label="Extension Name" width="100%" required="true">
+		<mx:toolTip>The name of the exetension. Has a limit of 255 characters.</mx:toolTip>
+		<mx:TextInput id="txtName" maxChars="255" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Version" width="100%" required="true">
+		<mx:toolTip>The version number of the extension, in the format a\{.b\{.c\}\}, where a, b, and c are all positive integers. For example, valid version numbers include 1, 3.6, and 10.0.1. The first number is the major version number, incremented when you make substantial changes to the extension; the second number is the minor version number, incremented for smaller changes. The third number is incremented for each new &quot;build&quot; of the extension between releases; for example, after you submit version 4.1 of your extension to Adobe, it may be returned to you for minor corrections. You might label the fixed version 4.1.1; after a couple of rounds of corrections, the version number of the posted extension might be 4.1.3.</mx:toolTip>
+		<mx:TextInput id="txtVersion" restrict="0123456789." width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="MXI Version (2.x+)" width="100%">
+		<mx:toolTip>Indicates the version of the MXI specification. Extension Manager 2.0 supports mxiversion 2.0 and earlier, while Extension Manager 2.1 supports mxiversion 2.1 and earlier. If mxiversion is unspecified, the default value is 1.0. Note: If the specified mxiversion is more recent than the current Extension Manager, an alert appears during installation, indicating that a newer Extension Manager is required.</mx:toolTip>
+		<mx:TextInput id="txtMXIVersion" restrict="0123456789." maxChars="3" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Extension Manager Version (2.x+)" width="100%">
+		<mx:toolTip>Indicates the oldest version of Extension Manager that can install this extension. Note: Specify the xmanversion attribute only if a newer version of Extension Manager doesn’t support the installer extension file.</mx:toolTip>
+		<mx:TextInput id="txtXManVersion" restrict="0123456789." maxChars="3" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Icon (2.x+)" width="100%">
+		<mx:toolTip><![CDATA[Indicates the path to customized extension icon displayed by Extension Manager. To specify this relative path, use the $ExtensionSpecificEMStore attribute. If icon is unspecified, the default icon is used.<br /><br/>Note: The icon attribute applies only to CS4 applications and later. To specify an icon for CS3 or earlier applications, use the type attribute.]]></mx:toolTip>
+		<mx:HBox width="100%">
+			<mx:TextInput id="txtIcon" width="100%" />
+			<mx:Button label="Browse" click="onClickBrowse()" >
+				<mx:icon>@Embed(source='../../../assets/icons/documentOpenIcon.png')</mx:icon>
+			</mx:Button>
+		</mx:HBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Target Application" width="100%" toolTip="Indicates what application this extension is made for.">
+		<mx:ComboBox id="ddTargetApp" editable="false" change="onSelectApp(event)" selectedIndex="0">
+			<mx:dataProvider>
+				<mx:Array>
+					<mx:Object data="" label="Other" />
+	                <mx:Object data="dw" label="Dreamweaver" />
+	                <mx:Object data="fw" label="Fireworks" />
+	                <mx:Object data="fl" label="Flash" />
+	            </mx:Array>
+			</mx:dataProvider>
+			<mx:toolTip>Indicates what platform the file is intended for. If you specify a platform, the file is installed only on that platform; for instance, you can provide two versions of a file, one for Windows and one for Macintosh, and specify a platform value for each.</mx:toolTip>
+		</mx:ComboBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Type" width="100%" toolTip="Indicates what kind of extension this is. This optional attribute applies only to Dreamweaver, Fireworks, and Flash.">
+		<mx:ComboBox id="ddType" enabled="false"/>
+	</mx:FormItem>
+	
+	<mx:FormItem width="100%">
+		<mx:Text enabled="false" text="Note: The value &quot;suite&quot; denotes a set of items that are released as a unit, in a single MXP file, with a single MXI."  width="100%" textAlign="center"/>
+	</mx:FormItem>
+		
+	<mx:FormItem label="Requires Restart?" width="100%" horizontalAlign="left">
+		<mx:toolTip>Indicates whether the Adobe application must be restarted after the extension is installed. A new attribute force-quit introduced in CS5 has a similar function; it is recommended to use the new attribute forcequit.</mx:toolTip>
+		<mx:CheckBox id="cbRestart" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Multilingual (2.1+)?" width="100%">
+		<mx:toolTip>Indicates whether the Adobe application must be restarted after the extension is installed.</mx:toolTip>
+		<mx:CheckBox id="cbLingual" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Name Res ID (2.1+)" width="100%">
+		<mx:toolTip>References string with value of “name_resid” in resource file, and displays that string in the “extension” field of the user interface.</mx:toolTip>
+		<mx:TextInput id="txtNameResID" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Plugin Manager Type (5.0)" width="100%" toolTip="Indicates the type of plug-ins included in the extension.">
+		<mx:ComboBox id="ddManType" editable="false" selectedIndex="0">
+			<mx:dataProvider>
+				<mx:Array>
+					<mx:Object data="all-users" label="All Users" />
+	                <mx:Object data="current-user" label="Current User" />
+	            </mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Show Files (5.0)?" width="100%">
+		<mx:toolTip>This attribute only works for extensions for InDesign CS5 and InCopy CS5. If this attribute is "true", path information for all of the files installed with the extension is shown in the "Advanced" tab in the bottom portion of the Extension Manager workspace. If this attribute is "false", no path information is shown.</mx:toolTip>
+		<mx:CheckBox id="cbFiles" selected="true" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Force Quit (5.0)?" width="100%">
+		<mx:toolTip>Specifies whether the extension target application needs to quit before an operation such as installation or removal. Operations like installation or removal of some extensions may conflict with the running target application. Setting this attribute as "true" informs Extension Manager to make sure the target application is not running before performing the operation. If Extension Manager finds that the target application is running, it prompts the user to quit the application first. For many applications, the user must manually quit them. For Dreamweaver CS5, the user can click the button Exit Application to request it to quit.</mx:toolTip>
+		<mx:CheckBox id="cbQuit" />
+	</mx:FormItem>
+</mx:Form>

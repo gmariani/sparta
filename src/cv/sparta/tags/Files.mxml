@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" 
+	label="Files" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0"
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.collections.ArrayCollection;
+			import cv.sparta.tags.File;
+			
+			[Bindable]
+			public var languages:ArrayCollection;
+			
+			[Bindable]
+			public var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+			
+			public function set defaultTokens(data:ArrayCollection):void {
+				tagFile.defaultTokens = data;
+			}
+			
+			public function get defaultTokens():ArrayCollection {
+				return tagFile.defaultTokens;
+			}
+			
+			public function setCustomTokens(data:ArrayCollection):void {
+				tagFile.tokensList = new ArrayCollection(defaultTokens.source.slice());
+				tagFile.tokensList.addAll(data);
+			}
+		
+			public function reset():void {
+				ddFileLanguage.selectedIndex = 0;
+				ddFileType.selectedIndex = 0;
+				tagFile.tokensList = new ArrayCollection(defaultTokens.source.slice());
+				cancel();
+			}
+		
+			public function setXML(value:XML):void {
+				reset();
+				
+				var i:String;
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				if(value.@xmlNS::lang && value.@xmlNS::lang.toString().length > 0) {
+					var lang:String = value.@xmlNS::lang.toString();
+					for(i in ddFileLanguage.dataProvider) {
+						if(ddFileLanguage.dataProvider[i].data == lang) {
+							ddFileLanguage.selectedItem = ddFileLanguage.dataProvider[i];
+							break;
+						}
+					}
+				}
+				
+				if(value["@default-file-type"] && value["@default-file-type"].toString().length > 0) {
+					var type:String = value["@default-file-type"].toString();
+					for(i in ddFileType.dataProvider) {
+						if(ddFileType.dataProvider[i].data == type) {
+							ddFileType.selectedItem = ddFileType.dataProvider[i];
+							break;
+						}
+					}
+				}
+				
+				acItems = new ArrayCollection([]);
+				for each(var f:XML in value.files.file) {
+					acItems.addItem(tagFile.xmlToObject(f));
+				}
+			}
+		
+			/*
+			source, destination, {platform}, {shared}, {systemfile}, {win-extension}, {isresourcefile}, {minVersion}, {maxVersion}
+			*/
+			public function getXML():String {
+				var str:String = "";
+				if(acItems.length > 0) {
+					str += '<files';
+					str += ' xml:lang="' + ddFileLanguage.selectedItem.data + '"';
+					str += ' default-file-type="' + ddFileType.selectedItem.data + '"';
+					str += ' >';
+					for(var i:String in acItems) {
+						str += tagFile.objectToString(acItems[i]);
+					}
+					str += "</files>";
+				}
+				return str;
+			}
+			
+			private function add():void {
+				show(tagFile.getEmptyData(), -1);
+			}
+			
+			private function save():void {
+				var obj:Object = tagFile.data;
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				cancel();
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+			}
+			
+			private function cancel():void {
+				tagFile.reset();
+				vsFiles.selectedIndex = 0;
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				tagFile.data = obj;
+				vsFiles.selectedIndex = 1;
+			}
+			
+			private function listLabel(obj:Object):String {
+				return tagFile.objectToString(obj);
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	
+	
+	<mx:HBox width="100%" horizontalAlign="left">
+		<mx:FormHeading label="Files" width="100%">
+			<mx:toolTip>Container tag that contains tags describing the files an extension installs.</mx:toolTip>
+		</mx:FormHeading>
+		<mx:Spacer width="100%" />
+		<mx:Label text="File Language (2.1+)" enabled="false" paddingTop="2"/>
+		<mx:ComboBox id="ddFileLanguage" dataProvider="{languages}" toolTip="Specifies the language for the group of files. Extension Manager compares this language with the user language. If the languages match, the files are installed; if not, the files are ignored. If Extension Manager can't determine the user language, it copies all files regardless of their specified language."/>
+		<mx:Label text="Default File Type (5.0)" enabled="false" paddingTop="2"/>
+		<mx:ComboBox id="ddFileType" toolTip="Specifies the type of files wrapped in the files tag. If you specify 'ordinary' the files will be packaged up without any special processing into an ordinary extension. Use the 'ordinary' flag for all Extensions for CS4 or earlier releases." >
+			<mx:dataProvider>
+				<mx:Array>
+					<mx:Object data="ordinary" label="Ordinary" />
+					<mx:Object data="csxs" label="CS Extension Package" />
+	                <mx:Object data="plugin" label="Plug-in" />
+	            </mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:HBox>
+	
+	<mx:ViewStack id="vsFiles" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button label="Add File"  click="add()" toolTip="Provides information about a specific file to be installed as part of the extension." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:File id="tagFile" width="100%" height="100%" save="save()" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

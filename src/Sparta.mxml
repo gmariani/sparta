@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication 
+	xmlns:sparta="cv.sparta.*"  
+	xmlns:mxi="cv.sparta.tags.*"  
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	
+	creationComplete="init(event)" addedToStage="initTracker()"
+	showStatusBar="false" 
+	width="900" height="700" >
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="0" paddingRight="0" paddingTop="0" paddingBottom="0" />
+	</s:layout>
+	
+	<!--<fx:Style source="style/style.css" />-->
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		
+		s|Window {
+			statusBarBackgroundColor:#C0C0C0;
+			backgroundAlpha: 1.0;
+			backgroundColor: #333333;
+		}
+		
+		/*
+		//------------------------------
+		//  Label
+		//------------------------------
+		*/
+		mx|Label {
+			color: #FFFFFF;
+			disabledColor: #BBBBBB;
+		}
+		
+		/*
+		//------------------------------
+		//  List
+		//------------------------------
+		*/
+		mx|List {
+			color: #BBBBBB;
+			rollOverColor: #555555;
+			selectionColor: #444444;
+			textRollOverColor: #FFFFFF;
+			textSelectedColor: #FFFFFF;
+			borderColor: #222222;
+			disabledColor: #666666;
+			borderStyle: solid;
+		}
+		
+		/*
+		//------------------------------
+		//  TextInput
+		//------------------------------
+		*/
+		mx|TextInput:disabled {
+			/*backgroundColor: #BBBBBB;*/
+			contentBackgroundColor: #bbbbbb;
+		}
+		
+		/*
+		//------------------------------
+		//  TitleWindow
+		//------------------------------
+		*/
+		mx|TitleWindow {
+			/*closeButtonDisabledSkin: Embed(source="kingnarestyle.swf",symbol="Panel_closeButtonDisabledSkin");
+			closeButtonDownSkin: Embed(source="kingnarestyle.swf",symbol="Panel_closeButtonDownSkin");
+			closeButtonOverSkin: Embed(source="kingnarestyle.swf",symbol="Panel_closeButtonOverSkin");
+			closeButtonUpSkin: Embed(source="kingnarestyle.swf",symbol="Panel_closeButtonUpSkin");*/
+			titleStyleName: "windowTitle";
+			cornerRadius:2;
+			backgroundColor: #333333;
+			controlBarStyleName: "windowControlBar";
+			borderStyle: solid; 
+		}
+		.windowTitle {
+			verticalAlign:middle; 
+		}
+		.windowControlBar {
+			/*backgroundImage: Embed(source="kingnarestyle.swf",symbol="ApplicationControlBar_BackgroundSkin");*/
+			backgroundSize:"100%";
+		}
+	</fx:Style>
+	
+	<fx:Script source="cv/sparta/Main.as" />
+	
+	<fx:Declarations>
+		<s:Fade id="fadeOut" duration="250" alphaFrom="1.0" alphaTo="0.0"/>
+    	<s:Fade id="fadeIn" duration="250" alphaFrom="0.0" alphaTo="1.0"/>
+	</fx:Declarations>
+	
+	<mx:ControlBar width="100%" includeInLayout="true" horizontalAlign="right">
+		<mx:Button label="New" click="fileNew()" includeInLayout="{!container.visible}" visible="{!container.visible}" icon="@Embed(source='assets/icons/documentNewIcon.png')"/>
+		<mx:Button label="Open..." click="fileOpen()" includeInLayout="{!container.visible}" visible="{!container.visible}" icon="@Embed(source='assets/icons/documentOpenIcon.png')" />
+		
+		<mx:Button label="Save" click="fileSave()" includeInLayout="{container.visible}" visible="{container.visible}" icon="@Embed(source='assets/icons/saveIcon.png')" />
+		<mx:Button label="Save As..." click="fileSaveAs()" includeInLayout="{container.visible}" visible="{container.visible}" icon="@Embed(source='assets/icons/saveAsIcon.png')" />
+		<mx:Button label="Close" click="fileClose()" includeInLayout="{container.visible}" visible="{container.visible}" />
+		<mx:Image source="assets/icons/helpIcon.png" click="onClickAbout()" toolTip="About .sparta" autoLoad="true"/>
+	</mx:ControlBar>
+	
+	<s:VGroup paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10" width="100%" height="100%">
+		<mx:TabNavigator visible="false" width="100%" hideEffect="{fadeOut}" showEffect="{fadeIn}"  height="100%" id="container" creationPolicy="all" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="10">
+			<mx:Form label="Extension" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0">
+				<mxi:Extension id="frmExtension" width="100%" height="100%" />
+				<mx:HRule width="100%" />
+				<mxi:Language id="frmLanguage" width="100%" languages="{languagesList}"/>
+				<mx:HRule width="100%" />
+				<mxi:Author id="frmAuthor" width="100%" height="100%"/>
+			</mx:Form>
+			
+			<mx:Form label="Details" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0">
+				<mxi:Description id="frmDescription" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" height="100%" />
+				<mx:HRule width="100%" />
+				<mxi:Update id="frmUpdate" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" />
+				<mx:HRule width="100%" />
+				<mxi:License id="frmLicense" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" height="100%" />
+				<mx:HRule width="100%" />
+				<mxi:UIAccess id="frmUIAccess" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" height="100%" />
+			</mx:Form>
+			
+			<mxi:Products id="frmProducts" hideEffect="{fadeOut}" showEffect="{fadeIn}" width="100%" height="100%" />
+			<mxi:Files id="frmFiles" width="100%" height="100%" hideEffect="{fadeOut}" showEffect="{fadeIn}" defaultTokens="{defTokensList}" languages="{languagesList}"/>
+			<mxi:ToolPanelChanges id="frmToolPanel" width="100%" height="100%" hideEffect="{fadeOut}" showEffect="{fadeIn}" languages="{languagesList}" />
+			<mxi:ConfigurationChanges id="frmConfig" width="100%" height="100%" hideEffect="{fadeOut}" showEffect="{fadeIn}" languagesList="{languagesList}" />
+			<mxi:FileTokens id="frmTokens" width="100%" height="100%" hideEffect="{fadeOut}" showEffect="{fadeIn}" defaultTokens="{defTokensList}" tokenUpdate="onTokenUpdate(event)" />
+		</mx:TabNavigator>
+	</s:VGroup>
+</s:WindowedApplication>

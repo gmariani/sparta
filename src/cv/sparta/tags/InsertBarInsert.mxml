@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:comp="cv.sparta.components.*" width="400" height="300">
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import cv.sparta.dw.insertbar.Category;
+			
+			[Bindable]
+			public var acLanguages:ArrayCollection;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtCatID.text = obj.data.categoryID;
+				var i:String;
+				for(i in ddBefore.dataProvider) {
+					if(ddBefore.dataProvider[i].data == obj.data.before) {
+						ddBefore.selectedItem = ddBefore.dataProvider[i];
+						break;
+					}
+				}
+				for(i in ddLanguage.dataProvider) {
+					if(ddLanguage.dataProvider[i].data == obj.data.language) {
+						ddLanguage.selectedItem = ddLanguage.dataProvider[i];
+						break;
+					}
+				}
+				
+				cmpInsertbar.fromArray(obj.data.childTags);
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.categoryID = txtCatID.text;
+				obj.data.before = ddBefore.selectedItem.data;
+				obj.data.language = ddLanguage.selectedItem.data;
+				obj.data.childTags = cmpInsertbar.toArray();
+				obj.data.stackType = "insert";
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.categoryID = "";
+				obj.data.before = ddBefore.dataProvider[0].data;
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				obj.data.stackType = "insert";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.categoryID = "";
+				
+				obj.data.before = ddBefore.dataProvider[0].data;
+				if("@insertBefore" in f) {
+					obj.data.categoryID = f.@insertBefore.toString();
+					obj.data.before = ddBefore.dataProvider[0].data;
+				} else if("@insertAfter" in f) {
+					obj.data.categoryID = f.@insertAfter.toString();
+					obj.data.before = ddBefore.dataProvider[1].data;
+				}
+				
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				if(f.@xmlNS::lang && f.@xmlNS::lang.toString().length > 0) {
+					obj.data.language = f.@xmlNS::lang.toString();
+				}
+				
+				obj.data.childTags = [];
+				for each(var c:XML in f.children()) {
+					obj.data.childTags.push(Category.xmlToObject(c));
+				}
+				
+				obj.data.stackType = "insert";
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<insertbar-insert";
+				str += ' ' + obj.data.before + '="' + obj.data.categoryID + '"';
+				str += ' xml:lang="' + obj.data.language + '"';
+				str += ">";
+				
+				for(var i:String in obj.data.childTags) {
+					str += Category.objectToString(obj.data.childTags[i]);
+				}
+				
+				str += "</insertbar-insert>";
+				return str;
+			}
+			
+			public function reset():void {
+				ddBefore.selectedIndex = 0;
+				txtCatID.text = "";
+				txtCatID.errorString = "";
+				ddLanguage.selectedIndex = 0;
+				cmpInsertbar.reset();
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valCatID, valInsertbarComp];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Insertbar...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:NumberValidator id="valInsertbarComp" required="true" source="{cmpInsertbar}" property="length" minValue="1" lowerThanMinError="Must have atleast one child tag." />
+	<mx:StringValidator id="valCatID" required="true" source="{txtCatID}" property="text" minLength="2" />
+
+	<mx:FormHeading label="Insert Insertbar" width="100%" textAlign="center"/>
+	<mx:FormItem label="Category ID" width="100%" required="true">
+		<mx:toolTip>ID of the existing category to insert before or after.</mx:toolTip>
+		<mx:HBox width="100%">
+			<mx:ComboBox id="ddBefore">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="insertBefore" label="Insert Before" />
+		                <mx:Object data="insertAfter" label="Insert After" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+			
+			<mx:TextInput id="txtCatID" width="100%" />
+		</mx:HBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Language" width="100%">
+		<mx:toolTip>Specifies the language for the listed file. Extension Manager compares this language with the user language. If the languages match, configuration changes are applied; if not, they are ignored. If Extension Manager can't determine the user language, it applies all configuration changes regardless of their specified language.</mx:toolTip>
+		<mx:ComboBox id="ddLanguage" dataProvider="{acLanguages}"/>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Child Tags" width="100%" required="true">
+		<comp:InsertBar id="cmpInsertbar" width="100%" height="200" />
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var acLanguages:ArrayCollection;
+		
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtName.text = obj.data.name;
+				txtPosition.text = obj.data.position;
+				txtDepth.text = obj.data.depth;
+				for(var i:String in cbLanguage.dataProvider) {
+					if(cbLanguage.dataProvider[i].data == obj.data.language) {
+						cbLanguage.selectedItem = cbLanguage.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = txtName.text;
+				obj.data.language = cbLanguage.selectedItem.data;
+				obj.data.position = txtPosition.text;
+				obj.data.depth = txtDepth.text;
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = "";
+				obj.data.position = "";
+				obj.data.depth = "";
+				obj.data.language = cbLanguage.dataProvider[0].data;
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.name = "";
+				if("@name" in f) obj.data.name = f.@name;
+				
+				obj.data.position = "";
+				if("@position" in f) obj.data.position = f.@position;
+				
+				obj.data.depth = "";
+				if("@depth" in f) obj.data.depth = f.@depth;
+				
+				obj.data.language = cbLanguage.dataProvider[0].data;
+				if(f.@xmlNS::lang && f.@xmlNS::lang.toString().length > 0) {
+					obj.data.language = f.@xmlNS::lang.toString();
+				}
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<toolpanel-item-insert";
+				str += ' xml:lang="' + obj.data.language + '"';
+				str += ' name="' + obj.data.name + '"';
+				if(obj.data.position.length > 0) str += ' position="' + obj.data.position + '"';
+				if(obj.data.depth.length > 0) str += ' depth="' + obj.data.depth + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtName.text = "";
+				txtName.errorString = "";
+				txtPosition.text = "";
+				txtDepth.text = "";
+				cbLanguage.selectedIndex = 0;
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valName];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid ToolPanel Item...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valName" required="true" source="{txtName}" property="text" minLength="2" />
+	
+	<mx:FormHeading label="Insert Tool Panel Item" width="100%" textAlign="center"/>
+	
+	<mx:FormItem label="Name" width="100%" required="true" toolTip="The name of the tool to insert.">
+		<mx:TextInput id="txtName" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Position" width="100%">
+		<mx:toolTip>The 0-based position at which to insert the tool. Valid positions are 0 through 17. If the attribute is missing, or has a value beyond 17, the tool assumes the last position in the toolbar by default.</mx:toolTip>
+		<mx:TextInput id="txtPosition" maxChars="2" restrict="0123456789" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Depth" width="100%">
+		<mx:toolTip>The 0-based depth of the tool is its position in the toolbar, where 0 specifies the top. If the depth attribute is missing, or has a value beyond the bottom of the menu as the tool's position, the tool depth defaults to the bottom of the menu.</mx:toolTip>
+		<mx:TextInput id="txtDepth" maxChars="4" restrict="0123456789" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Language (2.1+)" width="100%">
+		<mx:toolTip>Specifies the language for the listed file. Extension Manager compares this language with the user language. If the languages match, configuration changes are applied; if not, they are ignored. If Extension Manager can't determine the user language, it applies all configuration changes regardless of their specified language.</mx:toolTip>
+		<mx:ComboBox id="cbLanguage" dataProvider="{acLanguages}"/>
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

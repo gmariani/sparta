@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="400" 
+	paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			public var languages:ArrayCollection;
+		
+			public function reset():void {
+				ddLanguage.selectedIndex = 0;
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				if("defaultLanguage" in value) {
+					var strLang:String = value.defaultLanguage.toString();
+					for(var i:String in ddLanguage.dataProvider) {
+						if(ddLanguage.dataProvider[i].data == strLang) {
+							ddLanguage.selectedItem = ddLanguage.dataProvider[i];
+							break;
+						}
+					}
+				}
+			}
+		
+			/*
+			This tag specifies the default language for installed files. Extension Manager determines the
+			correct language by completing these steps, listed in order of priority:
+			1 The language of the point product (defined in XManConfig.xml file for point product).
+			2 The language of the Extension Manager interface.
+			3 The language selected by the user when prompted by Extension Manager.
+			4 If the extension doesn’t provide files for the user-selected language, Extension Manager installs
+			files specified by the “defaultLanguage” tag.
+			If Extension Manager can't find any files belonging to the above languages, it installs files for all
+			languages.
+			*/
+			public function getXML():String {
+				return '<defaultLanguage>' + ddLanguage.selectedItem.data + '</defaultLanguage>';
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:FormHeading label="Default Language" width="100%">
+		<mx:toolTip>This tag specifies the default language for installed files (version 2.1 and later).</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:FormItem label="Default Language (2.1+)" width="100%" toolTip="What the default language is for the extension.">
+		<mx:ComboBox id="ddLanguage" dataProvider="{languages}"/>
+	</mx:FormItem>
+</mx:Form>

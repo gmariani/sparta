@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="500" title="Dreamweaver Toolbar Item Reference">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtItemID.text = obj.data.id;
+				txtShowIf.text = obj.data.showIf;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = txtItemID.text;
+				obj.data.showIf = txtShowIf.text;
+				obj.data.tagType = "ItemRef";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.showIf = "";
+				obj.data.tagType = "ItemRef";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id  = f.@id.toString();
+				
+				obj.data.showIf = "";
+				if("@showIf" in f) obj.data.showIf = f.@showIf.toString();
+				
+				obj.data.tagType = "ItemRef";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<itemref';
+				str += ' id="' + obj.data.id + '"';
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				str += ' />';
+				return str;
+			}
+			
+			public function reset():void {
+				txtItemID.text = "";
+				txtShowIf.text = "";
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valItemID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Item Ref...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valItemID" required="true" source="{txtItemID}" property="text" />
+
+	<mx:Form width="100%" height="100%">
+		
+		<mx:FormItem label="Item ID" width="100%" required="true" >
+			<mx:toolTip>Must be the ID of an item that was previously defined or included in the file. Dreamweaver does not allow forward references. If a toolbar item tag references an undefined ID, Dreamweaver reports an error and ignores the reference.</mx:toolTip>
+			<mx:TextInput id="txtItemID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Show If (Script)" width="100%" >
+			<mx:toolTip>Specifies that this item appears on the toolbar only if the specified script returns a true value. For example, you can use showIf to show certain buttons only in a given application or only when a page is written in a server-side language such as Adobe ColdFusion, ASP, or JSP. If you do not specify showIf, the item always appears. Dreamweaver checks this property whenever the item’s enabler runs; that is, according to the value of the update attribute. You should use this attribute sparingly. The attribute can be used either in the item definition or in a reference to the item from a toolbar. If both the definition and the reference specify the showIf attribute, Dreamweaver shows the item only if both conditions are true. The showIf attribute is equivalent to the showIf() function in a command file.</mx:toolTip>
+			<mx:TextInput id="txtShowIf" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

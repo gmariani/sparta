@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.PopUpManagerChildList;
+			import mx.core.IFlexDisplayObject;
+			import mx.containers.TitleWindow;
+			import mx.core.UIComponent;
+			
+			[Bindable]
+			public var acLanguages:ArrayCollection;
+			
+			[Bindable]
+			public var acChildItems:ArrayCollection = new ArrayCollection([]);
+			
+			[Bindable]
+			private var acChildTags:ArrayCollection = new ArrayCollection([]);
+			
+			private var acMenuTagsDefault:ArrayCollection = new ArrayCollection([
+				{data:"Menu", label:"Menu"},
+				{data:"MenuItem", label:"Menu Item"},
+				{data:"Separator", label:"Separator"},
+				{data:"Comment", label:"Comment"},
+			]);
+			
+			private var acMenuTagsDefinition:ArrayCollection = new ArrayCollection([
+				{data:"Menu", label:"Menu"},
+				{data:"Format", label:"Format"},
+				{data:"Separator", label:"Separator"},
+				{data:"Comment", label:"Comment"},
+			]);
+			
+			private var _tagType:int = 0;
+			
+			private var currentChildIndex:int = -1;
+			
+			public function get tagType():int {
+				return _tagType;
+			}
+			
+			public function set tagType(value:int):void {
+				_tagType = value;
+				acChildTags = value == 2 ? acMenuTagsDefinition : acMenuTagsDefault;
+			}
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				var i:String;
+				for(i in ddBeforeApped.dataProvider) {
+					if(ddBeforeApped.dataProvider[i].data == obj.data.beforeAppend) {
+						ddBeforeApped.selectedItem = ddBeforeApped.dataProvider[i];
+						break;
+					}
+				}
+				txtMenuID.text = obj.data.menuID;
+				
+				for each(var o:Object in obj.data.childTags) {
+					acChildItems.addItem(o);
+				}
+				
+				for(i in ddLanguage.dataProvider) {
+					if(ddLanguage.dataProvider[i].data == obj.data.language) {
+						ddLanguage.selectedItem = ddLanguage.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.beforeAppend = ddBeforeApped.selectedItem.data;
+				obj.data.menuID = txtMenuID.text;
+				obj.data.childTags = [];
+				for each(var obj2:Object in acChildItems) {
+					obj.data.childTags.push(obj2);
+				}
+				obj.data.language = ddLanguage.selectedItem.data;
+				obj.data.stackType = "insert";
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.beforeAppend = ddBeforeApped.dataProvider[0].data;
+				obj.data.menuID = "";
+				obj.data.childTags = [];
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				obj.data.stackType = "insert";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				
+				var obj:Object = new Object();
+				obj.data = new Object();
+					
+				obj.data.beforeAppend = ddBeforeApped.dataProvider[0].data;
+				if("@insertBefore" in f) {
+					obj.data.menuID = f.@insertBefore.toString();
+					obj.data.beforeAppend = ddBeforeApped.dataProvider[0].data;
+				} else if("@insertAfter" in f) {
+					obj.data.menuID = f.@insertAfter.toString();
+					obj.data.beforeAppend = ddBeforeApped.dataProvider[1].data;
+				} else if("@appendTo" in f) {
+					obj.data.menuID = f.@appendTo.toString();
+					obj.data.beforeAppend = ddBeforeApped.dataProvider[2].data;
+				} else if("@prependTo" in f) {
+					obj.data.menuID = f.@prependTo.toString();
+					obj.data.beforeAppend = ddBeforeApped.dataProvider[3].data;
+				}
+				
+				obj.data.skip = false;
+				if("@skipSeparator" in f && f.@skipSeparator.toString() == "true") obj.data.skip = true;
+
+				obj.data.childTags = [];
+				for each(var c:XML in f.children()) {
+					var obj2:Object;
+					switch(String(c.localName()).toLowerCase()) {
+						case "menu" : obj2 = Menu.xmlToObject(c); break;
+						case "menuitem" : obj2 = MenuItem.xmlToObject(c); break;
+						case "separator" : obj2 = Separator.xmlToObject(c); break;
+						case "comment" : obj2 = Comment.xmlToObject(c); break;
+						case "format" : 
+						default : obj2 = Format.xmlToObject(c);
+					}
+					
+					obj.data.childTags.push(obj2);
+				}
+				
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				if(f.@xmlNS::lang && f.@xmlNS::lang.toString().length > 0) {
+					obj.data.language = f.@xmlNS::lang.toString();
+				}
+				
+				obj.data.stackType = "insert";
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<menu-insert";
+				str += ' ' + obj.data.beforeAppend + '="' + obj.data.menuID + '"';
+				if(obj.data.skip) str += ' skipSeparator="' + obj.data.skip + '"';
+				str += ' xml:lang="' + obj.data.language + '"';
+				str += ">";
+				
+				for(var i:String in obj.data.childTags) {
+					str += getChildString(obj.data.childTags[i]);
+				}
+				
+				str += "</menu-insert>";
+				
+				return str;
+			}
+			
+			public function reset():void {
+				txtMenuID.text = "";
+				txtMenuID.errorString = "";
+				acChildItems = new ArrayCollection([]);
+				listChildItems.selectedItem = null;
+				ddLanguage.selectedIndex = 0;
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valMenuID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Menu...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+            
+            // Child Tags
+            private function addChildTag(tagType:String):void {
+				var tag:Class = getDefinitionByName("cv.sparta.tags." + tagType) as Class;
+				var method:Function = tag["getEmptyData"];
+				var obj:Object = method();
+				
+				showChildTag(obj, -1);
+			}
+            
+            private function removeChildTag():void {
+    			acChildItems.removeItemAt(currentChildIndex);
+				currentChildIndex = -1;
+				listChildItems.selectedIndex = currentChildIndex;
+			}
+			
+            private function showChildTag(obj:Object, index:int):void {
+				currentChildIndex = index;
+				
+				var tag:Class = getDefinitionByName("cv.sparta.tags." + obj.data.tagType) as Class;
+				var popup:Object = PopUpManager.createPopUp(UIComponent(this.parentApplication), tag, true, PopUpManagerChildList.APPLICATION);
+				popup.data = obj;
+				TitleWindow(popup).setStyle("horizontalAlign", "left");
+				popup.addEventListener('SAVE', saveChildTag, false, 0, true);
+				PopUpManager.centerPopUp(popup as IFlexDisplayObject);
+			}
+            
+            private function saveChildTag(e:Event):void {
+				var popup:Object = e.currentTarget;
+				var obj:Object = popup.data;
+				
+				if(currentChildIndex < 0) {
+					acChildItems.addItem(obj);
+					listChildItems.selectedItem = obj;
+				} else {
+					acChildItems.setItemAt(obj, currentChildIndex);
+					listChildItems.selectedIndex = currentChildIndex;
+				}
+			}
+			
+			private static function getChildString(obj:Object):String {
+				var tag:Class = getDefinitionByName("cv.sparta.tags." + obj.data.tagType) as Class;
+				var method:Function = tag["objectToString"];
+				return method(obj);
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listChildItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listChildItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listChildItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listChildItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					showChildTag(listChildItems.selectedItem, listChildItems.selectedIndex);
+				} else {
+					removeChildTag();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valMenuID" required="true" source="{txtMenuID}" property="text" />
+	
+	<mx:FormHeading label="Insert Menu" width="100%" textAlign="center"/>
+	
+	<mx:FormItem label="Menu ID" width="100%" required="true">
+		<mx:toolTip>Indicates that the new item should be inserted immediately before the item with the specified ID. (The ID can be the ID of a menu bar, a menu, a menu item, or a format.)</mx:toolTip>
+		<mx:HBox width="100%">
+			<mx:ComboBox id="ddBeforeApped">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="insertBefore" label="Insert Before" />
+		                <mx:Object data="insertAfter" label="Insert After" />
+		                <mx:Object data="appendTo" label="Append To" />
+		                <mx:Object data="prependTo" label="Prepend To" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+			
+			<mx:TextInput id="txtMenuID" width="100%" />
+		</mx:HBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Skip Separator?" width="100%">
+		<mx:toolTip>Applies only if the insertAfter attribute is also specified. It indicates that the new item should be inserted after the separator that immediately follows the item specified in insertAfter.</mx:toolTip>
+		<mx:CheckBox id="cbSkip" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Language" width="100%">
+		<mx:toolTip>Specifies the language for the listed file. Extension Manager compares this language with the user language. If the languages match, configuration changes are applied; if not, they are ignored. If Extension Manager can't determine the user language, it applies all configuration changes regardless of their specified language.</mx:toolTip>
+		<mx:ComboBox id="ddLanguage" dataProvider="{acLanguages}"/>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Child Tags" width="100%">
+		<mx:HBox>
+			<mx:ComboBox id="ddChildTag" dataProvider="{acChildTags}" />
+			
+			<mx:Button label="Add" click="addChildTag(ddChildTag.selectedItem.data)" >
+				<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+			</mx:Button>
+		</mx:HBox>
+		<mx:List 
+			editable="true" 
+			itemEditor="cv.sparta.editor.ChildEditor"
+			editorYOffset="23"
+			editorDataField="data" editorHeightOffset="7"
+			itemEditEnd="destroyListEditor(event)" 
+			itemFocusIn="initListEditor(event)"
+			id="listChildItems" change="dispatchEvent(event.clone())" wordWrap="true" variableRowHeight="true" labelFunction="getChildString" width="100%" height="100%" dataProvider="{acChildItems}" />
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

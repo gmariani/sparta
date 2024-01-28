@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" height="300" 
+	label="Toolbar" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import cv.sparta.components.Toolbar;
+			import cv.sparta.components.ToolbarChildren;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			public var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+			
+			public function set languages(data:ArrayCollection):void {
+				tagInsert.acLanguages = data;
+				tagRemove.acLanguages = data;
+				tagItemInsert.acLanguages = data;
+				tagItemRemove.acLanguages = data;
+			}
+			
+			public function get languages():ArrayCollection {
+				return tagInsert.acLanguages;
+			}
+		
+			public function reset():void {
+				acItems = new ArrayCollection([]);
+				cancel();
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				acItems = new ArrayCollection([]);
+				
+				txtToolbarFile.text = "";
+				if("@file" in value["configuration-changes"]["toolbar-changes"]) txtToolbarFile.text = value["configuration-changes"]["toolbar-changes"].@file.toString();
+				
+				// Insert
+				var f:XML;
+				var obj:Object;
+				for each(f in value["configuration-changes"]["toolbar-changes"]["toolbar-insert"]) {
+					obj = tagInsert.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Remove
+				for each(f in value["configuration-changes"]["toolbar-changes"]["toolbar-remove"]) {
+					obj = tagRemove.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Insert Item
+				for each(f in value["configuration-changes"]["toolbar-changes"]["toolbar-item-insert"]) {
+					obj = tagItemInsert.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Remove Item
+				for each(f in value["configuration-changes"]["toolbar-changes"]["toolbar-item-remove"]) {
+					obj = tagItemRemove.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				
+				if(acItems.length > 0 || txtToolbarFile.text.length > 0) {
+					str += '<toolbar-changes';
+					if(txtToolbarFile.text.length > 0) str += ' file="' + txtToolbarFile.text + '"';
+					
+					if(acItems.length > 0) {
+						str += '>';
+						
+						for(var i:String in acItems) {
+							var obj:Object = acItems[i];
+							switch(obj.data.stackType) {
+								case "insert" :
+									str += tagInsert.objectToString(obj);
+									break;
+								case "remove" :
+									str += tagRemove.objectToString(obj);
+									break;
+								case "insert-item" :
+									str += tagItemInsert.objectToString(obj);
+									break;
+								case "remove-item" :
+									str += tagItemRemove.objectToString(obj);
+									break;
+							}
+						}
+						str += "</toolbar-changes>";
+					} else {
+						str += '/>';
+					}
+				}
+				
+				return str;
+			}
+			
+			private function onClickBrowse():void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			private function onFileSelection(event:Event):void {
+				txtToolbarFile.text = flash.filesystem.File(event.target).nativePath;
+			}
+			
+			private function add(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.getEmptyData();
+						break;
+					case "remove" :
+						obj = tagRemove.getEmptyData();
+						break;
+					case "insert-item" :
+						obj = tagItemInsert.getEmptyData();
+						break;
+					case "remove-item" :
+						obj = tagItemRemove.getEmptyData();
+						break;
+				}
+				show(obj, -1);
+			}
+			
+			private function save(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+		            	obj = tagInsert.data;
+						break;
+					case "remove" :
+						obj = tagRemove.data;
+						break;
+					case "insert-item" :
+						obj = tagItemInsert.data;
+						break;
+					case "remove-item" :
+						obj = tagItemRemove.data;
+						break;
+				}
+				
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				vsToolbar.selectedIndex = 0;
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+			}
+			
+			private function cancel():void {
+				tagInsert.reset();
+				tagRemove.reset();
+				tagItemInsert.reset();
+				tagItemRemove.reset();
+				vsToolbar.selectedIndex = 0;
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				
+				switch(obj.data.stackType) {
+					case "insert" :
+						tagInsert.data = obj;
+						vsToolbar.selectedIndex = 1;
+						break;
+					case "remove" :
+						tagRemove.data = obj;
+						vsToolbar.selectedIndex = 2;
+						break;
+					case "insert-item" :
+						tagItemInsert.data = obj;
+						vsToolbar.selectedIndex = 3;
+						break;
+					case "remove-item" :
+						tagItemRemove.data = obj;
+						vsToolbar.selectedIndex = 4;
+						break;
+				}
+			}
+			
+			private function listLabel(obj:Object):String {
+				switch(obj.data.stackType) {
+					case "insert" :
+						return tagInsert.objectToString(obj);
+						break;
+					case "remove" :
+						return tagRemove.objectToString(obj);
+						break;
+					case "insert-item" :
+						return tagItemInsert.objectToString(obj);
+						break;
+					case "remove-item" :
+						return tagItemRemove.objectToString(obj);
+						break;
+					default :
+						return "";
+				}
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	
+	  
+	<mx:HBox width="100%" horizontalAlign="left" >
+		<mx:FormHeading label="Toolbar Changes" width="100%">
+			<mx:toolTip>Marks the beginning of toolbar changes.</mx:toolTip>
+		</mx:FormHeading>
+		<mx:Spacer width="100%" />
+		<mx:Label text="File"  enabled="false" paddingTop="2"/>
+		<mx:TextInput id="txtToolbarFile"/>
+		<mx:Button label="Browse" click="onClickBrowse()" >
+			<mx:icon>@Embed(source='../../../assets/icons/documentOpenIcon.png')</mx:icon>
+		</mx:Button>
+	</mx:HBox>
+	
+	<mx:ViewStack id="vsToolbar" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button label="Insert Toolbar" click="add('insert')" toolTip="Inserts the specified toolbar at the end of file." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				<mx:Button label="Remove Toolbar" click="add('remove')" toolTip="Removes the specified toolbar." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				<mx:Button label="Insert Toolbar Item" click="add('insert-item')" toolTip="Inserts the specified toolbar item at the specified location." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				<mx:Button label="Remove Toolbar Item" click="add('remove-item')" toolTip="Removes the specified toolbar item." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:ToolbarInsert id="tagInsert" width="100%" height="100%" save="save('insert')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:ToolbarRemove id="tagRemove" width="100%" height="100%" save="save('remove')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:ToolbarItemInsert id="tagItemInsert" width="100%" height="100%" save="save('insert-item')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:ToolbarItemRemove id="tagItemRemove" width="100%" height="100%" save="save('remove-item')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

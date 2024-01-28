@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" height="300" 
+	label="Insertbar" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			public var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+			
+			public function set languages(data:ArrayCollection):void {
+				tagInsert.acLanguages = data;
+				tagRemove.acLanguages = data;
+				tagInsertItem.acLanguages = data;
+				tagRemoveItem.acLanguages = data;
+			}
+			
+			public function get languages():ArrayCollection {
+				return tagInsert.acLanguages;
+			}
+		
+			public function reset():void {
+				acItems = new ArrayCollection([]);
+				cancel();
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				acItems = new ArrayCollection([]);
+				// Insert
+				var f:XML;
+				var obj:Object;
+				for each(f in value["configuration-changes"]["insertbar-changes"]["insertbar-insert"]) {
+					obj = tagInsert.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Remove
+				for each(f in value["configuration-changes"]["insertbar-changes"]["insertbar-remove"]) {
+					obj = tagRemove.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Insert Item
+				for each(f in value["configuration-changes"]["insertbar-changes"]["insertbar-item-insert"]) {
+					obj = tagInsertItem.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Remove Item
+				for each(f in value["configuration-changes"]["insertbar-changes"]["insertbar-item-remove"]) {
+					obj = tagRemoveItem.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				
+				if(acItems.length > 0) {
+					str += '<insertbar-changes>';
+					
+					for(var i:String in acItems) {
+						var obj:Object = acItems[i];
+						switch(obj.data.stackType) {
+							case "insert" :
+								str += tagInsert.objectToString(obj);
+								break;
+							case "remove" :
+								str += tagRemove.objectToString(obj);
+								break;
+							case "insert-item" :
+								str += tagInsertItem.objectToString(obj);
+								break;
+							case "remove-item" :
+								str += tagRemoveItem.objectToString(obj);
+								break;
+						}
+					}
+					str += "</insertbar-changes>";
+				}
+				
+				return str;
+			}
+			
+			private function add(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.getEmptyData();
+						break;
+					case "remove" :
+						obj = tagRemove.getEmptyData();
+						break;
+					case "insert-item" :
+						obj = tagInsertItem.getEmptyData();
+						break;
+					case "remove-item" :
+						obj = tagRemoveItem.getEmptyData();
+						break;
+				}
+				
+				show(obj, -1);
+			}
+			
+			private function save(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.data;
+						break;
+					case "remove" :
+						obj = tagRemove.data;
+						break;
+					case "insert-item" :
+						obj = tagInsertItem.data;
+						break;
+					case "remove-item" :
+						obj = tagRemoveItem.data;
+						break;
+				}
+				
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				vsInsertBar.selectedIndex = 0;
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+			}
+			
+			private function cancel():void {
+				tagInsert.reset();
+				tagRemove.reset();
+				tagInsertItem.reset();
+				tagRemoveItem.reset();
+				vsInsertBar.selectedIndex = 0;
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				
+				switch(obj.data.stackType) {
+					case "insert" :
+						tagInsert.data = obj;
+						vsInsertBar.selectedIndex = 1;
+						break;
+					case "remove" :
+						tagRemove.data = obj;
+						vsInsertBar.selectedIndex = 2;
+						break;
+					case "insert-item" :
+						tagInsertItem.data = obj;
+						vsInsertBar.selectedIndex = 3;
+						break;
+					case "remove-item" :
+						tagRemoveItem.data = obj;
+						vsInsertBar.selectedIndex = 4;
+						break;
+				}
+			}
+			
+			private function listLabel(obj:Object):String {
+				switch(obj.data.stackType) {
+					case "insert" :
+						return tagInsert.objectToString(obj);
+					case "remove" :
+						return tagRemove.objectToString(obj);
+					case "insert-item" :
+						return tagInsertItem.objectToString(obj);
+					case "remove-item" :
+						return tagRemoveItem.objectToString(obj);
+					default:
+						return "";
+				}
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:FormHeading label="Insertbar Changes" width="100%">
+		<mx:toolTip>Specifies changes to be made to the insertbar.xml file and add new toolbars files.</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:ViewStack id="vsInsertBar" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right" >
+				<mx:Button label="Insert Insertbar" toolTip="Inserts the specified category at the end of file." click="add('insert')" >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				
+				<mx:Button label="Remove Insertbar" toolTip="Removes the specified category." click="add('remove')" >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				
+				<mx:Button label="Insert Insertbar Item" toolTip="Inserts the specified item at the specified location." click="add('insert-item')" >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				
+				<mx:Button label="Remove Insertbar Item" toolTip="Removes the specified insertbar item." click="add('remove-item')" >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:InsertBarInsert id="tagInsert" width="100%" height="100%" save="save('insert')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:InsertBarRemove id="tagRemove" width="100%" height="100%" save="save('remove')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:InsertBarItemInsert id="tagInsertItem" width="100%" height="100%" save="save('insert-item')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:InsertBarItemRemove id="tagRemoveItem" width="100%" height="100%" save="save('remove-item')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

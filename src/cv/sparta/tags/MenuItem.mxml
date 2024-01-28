@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="500" title="Menu Item">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtName.text = obj.data.name;
+				txtID.text = obj.data.id;
+				txtKey.text = obj.data.key;
+				for(var i:String in ddPlatform.dataProvider) {
+					var strType:String = String(obj.data.platform).toLowerCase().split(" ").join("");
+					var strData:String = String(ddPlatform.dataProvider[i].data).toLowerCase().split(" ").join("");
+					if(strData == strType) {
+						ddPlatform.selectedItem = ddPlatform.dataProvider[i];
+						break;
+					}
+				}
+				txtFile.text = obj.data.file;
+				txtCommand.text = obj.data.command;
+				txtEnabled.text = obj.data.enabled;
+				txtChecked.text = obj.data.checked;
+				cbDynamic.selected = obj.data.dynamic;
+				txtArguments.text = obj.data.arguments;
+				txtResID.text = obj.data.resid;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = txtName.text;
+				obj.data.id = txtID.text;
+				obj.data.key = txtKey.text;
+				obj.data.platform = ddPlatform.selectedItem.data;
+				obj.data.file = txtFile.text;
+				obj.data.command = txtCommand.text;
+				obj.data.enabled = txtEnabled.text;
+				obj.data.checked = txtChecked.text;
+				obj.data.dynamic = cbDynamic.selected;
+				obj.data.arguments = txtArguments.text;
+				obj.data.resid = txtResID.text;
+				obj.data.tagType = "MenuItem";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = "";
+				obj.data.id = "";
+				obj.data.key = "";
+				obj.data.platform = "";
+				obj.data.file = "";
+				obj.data.command = "";
+				obj.data.enabled = "";
+				obj.data.checked = "";
+				obj.data.dynamic = false;
+				obj.data.arguments = "";
+				obj.data.resid = "";
+				obj.data.tagType = "MenuItem";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.name = "";
+				if("@name" in f) obj.data.name = f.@name.toString();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id = f.@id.toString();
+				
+				obj.data.key = "";
+				if("@key" in f) obj.data.key = f.@key.toString();
+				
+				obj.data.platform = "";
+				if("@platform" in f) obj.data.platform = f.@platform.toString();
+				
+				obj.data.file = "";
+				if("@file" in f) obj.data.file = f.@file.toString();
+				
+				obj.data.command = "";
+				if("@command" in f) obj.data.command = f.@command.toString();
+				
+				obj.data.enabled = "";
+				if("@enabled" in f) obj.data.enabled = f.@enabled.toString();
+				
+				obj.data.checked = "";
+				if("@checked" in f) obj.data.checked = f.@checked.toString();
+				
+				obj.data.dynamic = false;
+				if("@dynamic" in f && f.@dynamic.toString() == "true") {
+					obj.data.dynamic = true;
+				}
+				
+				obj.data.arguments = "";
+				if("@arguments" in f) obj.data.arguments = f.@arguments.toString();
+				
+				obj.data.resid = "";
+				if("@resid_name" in f) obj.data.resid = f.@resid_name.toString();
+				
+				obj.data.tagType = "MenuItem";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<menuitem xmlns:resid="http://ns.adobe.com/mxi"';
+				str += ' name="' + obj.data.name + '"';
+				str += ' id="' + obj.data.id + '"';
+				if(obj.data.key.length > 0) str += ' key="' + obj.data.key + '"';
+				if(obj.data.platform.length > 0) str += ' platform="' + obj.data.platform + '"';
+				if(obj.data.file.length > 0) str += ' file="' + obj.data.file + '"';
+				if(obj.data.command.length > 0) str += ' command="' + obj.data.command + '"';
+				if(obj.data.enabled.length > 0) str += ' enabled="' + obj.data.enabled + '"';
+				if(obj.data.checked.length > 0) str += ' checked="' + obj.data.checked + '"';
+				if(obj.data.dynamic != false) str += ' dynamic="' + obj.data.dynamic + '"';
+				if(obj.data.arguments.length > 0) str += ' arguments="' + obj.data.arguments + '"';
+				if(obj.data.resid.length > 0) str += ' resid:name="' + obj.data.resid + '"';
+				str += " />";
+				return str;
+			}
+			
+			public function reset():void {
+				txtName.text = "";
+				txtID.text = "";
+				txtKey.text = "";
+				txtFile.text = "";
+				txtCommand.text = "";
+				txtEnabled.text = "";
+				cbDynamic.selected = false;
+				txtArguments.text = "";
+				txtResID.text = "";
+				ddPlatform.selectedIndex = 0;
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valName, valID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Menu Item...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            private function onClickBrowse(target:String):void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			private function onFileSelection(event:Event):void {
+				var f:flash.filesystem.File = flash.filesystem.File(event.target);
+				f.removeEventListener(Event.SELECT, onFileSelection);
+				txtFile.text = f.nativePath;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valName" required="true" source="{txtName}" property="text" />
+	<mx:StringValidator id="valID" required="true" source="{txtID}" property="text" />
+	
+	<mx:Form width="100%" height="100%">
+		
+		<mx:FormItem label="Name" width="100%" required="true" >
+			<mx:toolTip>The name of the menu to insert, as it will appear in the menu bar. To set the menu’s access key (mnemonic) on Windows, use an underscore (_) in front of the access letter. The underscore is automatically removed on Mac OS.</mx:toolTip>
+			<mx:TextInput id="txtName" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="ID" width="100%" required="true" >
+			<mx:toolTip>The ID for the separator; each separator ID must be unique. Your separator IDs should start with a company name or some other namespace prefix to ensure uniqueness. In particular, don’t start your IDs with DW, which is the prefix used by the Dreamweaver menu IDs. One useful approach is to prefix every ID with your domain name (with the elements reversed); for example, if your domain name is joe.com, you could start every ID with com.joe. to ensure uniqueness.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Key" width="100%" >
+			<mx:toolTip>The shortcut key for the menu item. For syntax details that apply to Dreamweaver, see “About customizing Dreamweaver menus” in the “Customizing Dreamweaver” chapter of Using Dreamweaver.</mx:toolTip>
+			<mx:TextInput id="txtKey" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Platform" width="100%">
+			<mx:toolTip>Indicates that the separator should appear only on the given platform.</mx:toolTip>
+			<mx:ComboBox id="ddPlatform">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="" label="Mac and PC" />
+		                <mx:Object data="win" label="PC Only" />
+		                <mx:Object data="mac" label="Mac Only" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		
+		<mx:FormItem label="File" width="100%" height="100%" >
+			<mx:toolTip>The name of an HTML or JavaScript file that contains JavaScript code determining the behavior of the menu item. The path specified in the file attribute is relative to the Configuration folder. The file attribute overrides the command, enabled, and checked attributes. Either file or command must be specified for each menu item. Note that in some operating systems, filenames are case-sensitive; make sure to use the same capitalization in the file attribute as you use for the corresponding file and folder names on your hard disk.</mx:toolTip>
+			<mx:HBox width="100%">
+				<mx:TextInput id="txtFile" width="100%" />
+				<mx:Button label="Browse" click="onClickBrowse('file')"/>
+			</mx:HBox>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Command (Script)" width="100%" >
+			<mx:toolTip>JavaScript code specifying the action to be taken when the user chooses the menu item.</mx:toolTip>
+			<mx:TextInput id="txtCommand" width="100%"  height="100" textAlign="left"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Enabled (Script)" width="100%" >
+			<mx:toolTip>JavaScript code that the application executes before displaying the menu, to determine whether the menu item is enabled. The code should return a value of true or false, indicating that the menu item should be enabled or dimmed, respectively.</mx:toolTip>
+			<mx:TextInput id="txtEnabled" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Checked (Script)" width="100%" >
+			<mx:toolTip>JavaScript code that the application executes before displaying the menu, to determine whether the menu item should have a check mark next to it. The code should return a value of true or false, indicating that the menu item should be checked or unchecked, respectively.</mx:toolTip>
+			<mx:TextInput id="txtChecked" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Dynamic?" width="100%">
+			<mx:toolTip>Indicates whether the menu item’s text and state are to be determined dynamically, by an HTML file that contains JavaScript code (specified in the file attribute).</mx:toolTip>
+			<mx:CheckBox id="cbDynamic" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Arguments" width="100%" >
+			<mx:toolTip>Provides arguments to pass to the specified command file. This attribute is used only in conjunction with the file attribute.</mx:toolTip>
+			<mx:TextInput id="txtArguments" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Res ID Name (2.1)" width="100%">
+			<mx:toolTip>References string with value of resid:name in resource file, and changes the Dreamweaver configuration file to display that string as a menu item. If Extension Manager can't find the string in the resource file, the value specified in the name attribute is displayed as the menu item.</mx:toolTip>
+			<mx:TextInput id="txtResID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

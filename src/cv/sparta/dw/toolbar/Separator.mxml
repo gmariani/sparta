@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="500" title="Dreamweaver Toolbar Separator">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtShowIf.text = obj.data.showIf;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.showIf = txtShowIf.text;
+				obj.data.tagType = "Separator";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.showIf = "";
+				obj.data.tagType = "Separator";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.showIf = "";
+				if("@showIf" in f) obj.data.showIf = f.@showIf.toString();
+				
+				obj.data.tagType = "Separator";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = "<separator";
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				str += " />";
+				return str;
+			}
+			
+			public function reset():void {
+				txtShowIf.text = "";
+			}
+			
+			private function validateForm():void {
+            	/*var validatorArr:Array = [];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {*/
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                /*} else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Separator...", Alert.OK);
+                }*/
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:Form width="100%" height="100%">
+		
+		<mx:FormItem label="Show If (Script)" width="100%" >
+			<mx:toolTip>The showif attribute specifies that the separator should appear only on the toolbar if the given script returns true. For example, you can use the showIf attribute to show the separator only in a given application or only when the page has a certain document type. If the showIf attribute is unspecified, the separator always appears.</mx:toolTip>
+			<mx:TextInput id="txtShowIf" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

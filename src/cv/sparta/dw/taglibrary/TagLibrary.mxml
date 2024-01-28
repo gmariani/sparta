@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:comp="cv.sparta.components.*" 
+	width="500" 
+	title="Dreamweaver Tag Library" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import cv.sparta.components.TagRef;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtName.text = obj.data.name;
+				txtDocTypes.text = obj.data.doctypes;
+				txtPrefix.text = obj.data.prefix;
+				txtServer.text = obj.data.servermodel;
+				txtID.text = obj.data.id;
+				txtTagChooser.text = obj.data.tagchooser;
+				cmpTagRef.data = obj.data.childTags;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = txtName.text;
+				obj.data.doctypes = txtDocTypes.text;
+				obj.data.prefix = txtPrefix.text;
+				obj.data.servermodel = txtServer.text;
+				obj.data.id = txtID.text;
+				obj.data.tagchooser = txtTagChooser.text;
+				obj.data.childTags = cmpTagRef.data as Array;
+				obj.data.tagType = "TagLibrary";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = "";
+				obj.data.doctypes = "";
+				obj.data.prefix = "";
+				obj.data.servermodel = "";
+				obj.data.id = "";
+				obj.data.tagchooser = "";
+				obj.data.childTags = [];
+				obj.data.tagType = "TagLibrary";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.name = "";
+				if("@name" in f) obj.data.name  = f.@name.toString();
+				
+				obj.data.doctypes = "";
+				if("@doctypes" in f) obj.data.doctypes = f.@doctypes.toString();
+				
+				// Optional //
+				obj.data.prefix = "";
+				if("@prefix" in f) obj.data.prefix = f.@prefix.toString();
+				
+				obj.data.servermodel = "";
+				if("@servermodel" in f) obj.data.servermodel = f.@servermodel.toString();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id = f.@id.toString();
+				
+				obj.data.tagchooser = "";
+				if("@tagchooser" in f) obj.data.tagchooser = f.@tagchooser.toString();
+				
+				obj.data.childTags = cv.sparta.components.TagRef.xmlToArray(f);
+				
+				obj.data.tagType = "TagLibrary";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<taglibrary';
+				str += ' name="' + obj.data.name + '"';
+				str += ' doctypes="' + obj.data.doctypes + '"';
+				if(obj.data.prefix.length > 0) str += ' prefix="' + obj.data.prefix + '"';
+				if(obj.data.servermodel.length > 0) str += ' servermodel="' + obj.data.servermodel + '"';
+				if(obj.data.id.length > 0) str += ' id="' + obj.data.id + '"';
+				if(obj.data.tagchooser.length > 0) str += ' tagchooser="' + obj.data.tagchooser + '"';
+				str += '>';
+				str += cv.sparta.components.TagRef.arrayToString(obj.data.childTags);
+				str += '</taglibrary>';
+				return str;
+			}
+			
+			public function reset():void {
+				txtName.text = "";
+				txtDocTypes.text = "";
+				txtPrefix.text = "";
+				txtServer.text = "";
+				txtID.text = "";
+				txtTagChooser.text = "";
+				cmpTagRef.reset();
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valName, valDocTypes, valTagRefComp];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Tag Library...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valName" required="true" source="{txtName}" property="text" />
+	<mx:StringValidator id="valDocTypes" required="true" source="{txtDocTypes}" property="text" />
+	<mx:NumberValidator id="valTagRefComp" source="{cmpTagRef}" property="length" minValue="1" lowerThanMinError="Must have atleast one child tag." />
+	
+	<mx:Form id="form" width="100%" height="100%">
+
+		<mx:FormItem label="Tag Library Name" width="100%" required="true" >
+			<mx:toolTip>Used to refer to the tag library in the UI.</mx:toolTip>
+			<mx:TextInput id="txtName" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Document Types" width="100%" required="true" >
+			<mx:toolTip>Indicates the document types for which this library is active. When the library is active, library tags appear in the code hints menu. Not all tag libraries can be active at the same time because name conflicts can occur (for example, HTML and WML files are incompatible).</mx:toolTip>
+			<mx:TextInput id="txtDocTypes" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Prefix" width="100%"  >
+			<mx:toolTip><![CDATA[When specified, tags within the tag library have the form taglibrary.prefix + tagref.name. For example, if the taglibrary.prefix is "<jrun:" and the tagref.name is "if" , then the tag is of the form "<jrun:if". This can be overridden for a particular tag.]]></mx:toolTip>
+			<mx:TextInput id="txtPrefix" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Server Model" width="100%" >
+			<mx:toolTip><![CDATA[If the tags in the tag library execute on an application server, the servermodel attribute identifies the server model of the tag. If the tags are client-side tags (not server-side tags), the servermodel attribute is omitted. The servermodel attribute is also used for Check Target Browsers.]]></mx:toolTip>
+			<mx:TextInput id="txtServer" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="ID" width="100%" >
+			<mx:toolTip>This can be any string that is different from the taglibrary.ID attributes of other tag libraries in the file. The Extension Manager uses the ID attribute, so the MXP files can insert a new taglibrary and the tags files into the TagLibraries.vtm file.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Tag Chooser" width="100%" >
+			<mx:toolTip>A relative path to the TagChooser.xml file that is associated with this tag library.</mx:toolTip>
+			<mx:TextInput id="txtTagChooser" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Child Tags" width="100%" required="true">
+			<comp:TagRef id="cmpTagRef" width="100%" height="200" />
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

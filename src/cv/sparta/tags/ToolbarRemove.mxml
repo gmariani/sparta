@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var acLanguages:ArrayCollection;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtToolbarID.text = obj.data.toolbarID;
+				for(var i:String in ddLanguage.dataProvider) {
+					if(ddLanguage.dataProvider[i].data == obj.data.language) {
+						ddLanguage.selectedItem = ddLanguage.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.toolbarID = txtToolbarID.text;
+				obj.data.language = ddLanguage.selectedItem.data;
+				obj.data.stackType = "remove";
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.toolbarID = "";
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				obj.data.stackType = "remove";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.toolbarID = "";
+				if("@id" in f) obj.data.toolbarID = f.@id.toString();
+				
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				if(f.@xmlNS::lang && f.@xmlNS::lang.toString().length > 0) {
+					obj.data.language = f.@xmlNS::lang.toString();
+				}
+				
+				obj.data.stackType = "remove";
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<toolbar-remove";
+				str += ' id="' + obj.data.toolbarID + '"';
+				str += ' xml:lang="' + obj.data.language + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtToolbarID.text = "";
+				txtToolbarID.errorString = "";
+				ddLanguage.selectedIndex = 0;
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valToolbarID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Toolbar...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valToolbarID" required="true" source="{txtToolbarID}" property="text" minLength="2" />
+	
+	<mx:FormHeading label="Remove Toolbar" width="100%" textAlign="center"/>
+	
+	<mx:FormItem label="Toolbar ID" width="100%" required="true" toolTip="ID of the toolbar to be removed.">
+		<mx:TextInput id="txtToolbarID" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Language" width="100%">
+		<mx:toolTip>Specifies the language for the listed file. Extension Manager compares this language with the user language. If the languages match, configuration changes are applied; if not, they are ignored. If Extension Manager can't determine the user language, it applies all configuration changes regardless of their specified language.</mx:toolTip>
+		<mx:ComboBox id="ddLanguage" dataProvider="{acLanguages}"/>
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

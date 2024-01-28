@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="500" title="Dreamweaver Menu Shortcut" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtKey.text = obj.data.key;
+				txtID.text = obj.data.id;
+				txtCommand.text = obj.data.command;
+				txtFile.text = obj.data.file;
+				for(var i:String in ddPlatform.dataProvider) {
+					var strType:String = String(obj.data.platform).toLowerCase().split(" ").join("");
+					var strData:String = String(ddPlatform.dataProvider[i].data).toLowerCase().split(" ").join("");
+					if(strData == strType) {
+						ddPlatform.selectedItem = ddPlatform.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.key = txtKey.text;
+				obj.data.id = txtID.text;
+				obj.data.command = txtCommand.text;
+				obj.data.file = txtFile.text;
+				obj.data.platform = ddPlatform.selectedItem.data;
+				obj.data.tagType = "Shortcut";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.key = "";
+				obj.data.id = "";
+				obj.data.command = "";
+				obj.data.file = "";
+				obj.data.platform = "";
+				obj.data.tagType = "Shortcut";
+				return obj;
+			}
+			
+			public static function xmlToObject(t:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.key = "";
+				if("@key" in t && t.@key.toString().length > 0) obj.data.key = t.@key.toString();
+				
+				obj.data.id = "";
+				if("@id" in t && t.@id.toString().length > 0) obj.data.id = t.@id.toString();
+				
+				obj.data.command = "";
+				if("@command" in t && t.@command.toString().length > 0) obj.data.command = t.@command.toString();
+				
+				obj.data.file = "";
+				if("@file" in t && t.@file.toString().length > 0) obj.data.file = t.@file.toString();
+				
+				obj.data.platform = "";
+				if("@platform" in t) obj.data.platform = t.@platform.toString();
+				
+				obj.data.tagType = "Shortcut";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = "<shortcut";
+				str += ' key="' + obj.data.key + '"';
+				str += ' id="' + obj.data.id + '"';
+				if(obj.data.command.length > 0) str += ' command="' + obj.data.command + '"';
+				if(obj.data.file.length > 0) str += ' file="' + obj.data.file + '"';
+				if(obj.data.platform.length > 0) str += ' platform="' + obj.data.platform + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtKey.text = "";
+				txtKey.errorString = "";
+				txtID.text = "";
+				txtID.errorString = "";
+				txtCommand.text = "";
+				txtFile.text = "";
+				ddPlatform.selectedIndex = 0;
+			}
+            
+            private function validateForm():void {
+            	var validatorArr:Array = [valKey, valID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Shortcut...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            private function onClickBrowse():void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			private function onFileSelection(event:Event):void {
+				var f:flash.filesystem.File = flash.filesystem.File(event.target);
+				f.removeEventListener(Event.SELECT, onFileSelection);
+				txtFile.text = f.nativePath;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valKey" required="true" source="{txtKey}" property="text" />
+	<mx:StringValidator id="valID" required="true" source="{txtID}" property="text" />
+
+	<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" >
+	
+		<mx:FormItem label="Key" width="100%" required="true">
+			<mx:toolTip>The key combination used to activate the keyboard shortcut. For syntax details that apply to Dreamweaver, see “About customizing Dreamweaver menus” in the “Customizing Dreamweaver” chapter of Using Dreamweaver.</mx:toolTip>
+			<mx:TextInput id="txtKey" width="100%" />
+		</mx:FormItem>
+	
+		<mx:FormItem label="Shortcut ID" width="100%" required="true">
+			<mx:toolTip>A unique identifier for a shortcut. Your shortcut IDs should start with a company name or some other namespace prefix to ensure uniqueness. One useful approach is to prefix every ID with your domain name (with the elements reversed); for example, if your domain name is joe.com, you could start every ID with com.joe. to ensure uniqueness.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Command (Script)" width="100%" >
+			<mx:toolTip>The JavaScript code to execute when the user issues the keyboard shortcut.</mx:toolTip>
+			<mx:TextInput id="txtCommand" width="100%" height="100" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="File" width="100%" height="100%" >
+				<mx:toolTip>A file containing the JavaScript code to execute when the user issues the keyboard shortcut. The file attribute overrides the command attribute; either file or command must be specified for each shortcut.</mx:toolTip>
+				<mx:HBox width="100%">
+					<mx:TextInput id="txtFile" width="100%" />
+					<mx:Button label="Browse" click="onClickBrowse()"/>
+				</mx:HBox>
+			</mx:FormItem>
+		
+		<mx:FormItem label="Platform" width="100%">
+			<mx:toolTip>Indicates that the shortcut list should appear only on the given platform. Valid values are "win" and "mac".</mx:toolTip>
+			<mx:ComboBox id="ddPlatform">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="" label="Mac and PC" />
+		                <mx:Object data="win" label="PC Only" />
+		                <mx:Object data="mac" label="Mac Only" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

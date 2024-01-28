@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="60">
+	<mx:Script>
+		<![CDATA[
+			// So we don't require binding and cause Flex to throw warnings
+			override public function set data(value:Object):void {
+				super.data = value;
+				if(value != null) {
+					cbPrimary.selected = data.isPrimary;
+					cbRequired.selected = data.isRequired;
+					txtMaxVersion.text = data.maxVersion;
+					txtFamilyName.text = data.familyName;
+				}
+			}
+		]]>
+	</mx:Script>
+	<mx:HBox width="100%">
+		<mx:CheckBox id="cbPrimary" label="Primary?" toolTip="Indicates whether the specified Adobe product is the one the extension was primarily intended to be used with. For example, if the extension’s user interface appears in Dreamweaver but the extension also uses Fireworks, Dreamweaver is the primary product. For example, &lt;product name = 'Dreamweaver' version = '7' primary = 'true' /&gt; indicates that this extension is primarily intended for Dreamweaver; however, it might be used in another product that supports the Extension Manager. (If you set the primary attribute to 'true' for multiple products, Extension Manager can install the extension into each product.)" labelPlacement="left"/>
+		<mx:CheckBox id="cbRequired" label="Required?" toolTip="Indicates whether the specified Adobe product is required for the extension to function properly. If the extension will function without the indicated product, even if it won’t function as well without it, specify 'false' or omit the required attribute. If you don’t specify required = 'true' for any product tag, the product specified in the first product tag listed is assumed to be required." labelPlacement="left"/>
+		<mx:Label text="Max Version" enabled="false" paddingTop="2"/>
+		<mx:TextInput id="txtMaxVersion" restrict="0123456789." maxChars="5" width="100%">
+			<mx:toolTip>Specifies the latest product version that an extension can be installed in.</mx:toolTip>
+		</mx:TextInput>
+	</mx:HBox>
+	<mx:HBox width="100%">
+		<mx:Label text="Family Name" enabled="false" paddingTop="2"/>
+		<mx:TextInput id="txtFamilyName" width="100%">
+			<mx:toolTip>Combines Photoshop products together. For example, to combine the standard and Extended versions, specify &lt;product version="10" familyname="Photoshop" primary="true" /&gt;</mx:toolTip>
+		</mx:TextInput>
+		<mx:Label text="Bit (5.0)" enabled="false" paddingTop="2"/>
+		<mx:ComboBox id="ddBit" editable="false" selectedIndex="0">
+			<mx:toolTip>Indicates whether the extension’s target product is a 32-bit product or 64-bit product. Valid values are "32" or "64". If set to "32", the extension can only be installed for the 32-bit product. If set to "64", the extension can only be installed for the 64-bit application. If not set, the extension can be installed for both the 32-bit and the 64-bit versions of the application.</mx:toolTip>
+			<mx:dataProvider>
+				<mx:Array>
+					<mx:Object data="" label="x32 and x64" />
+					<mx:Object data="32" label="x32" />
+	                <mx:Object data="64" label="x64" />
+	            </mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:HBox>
+</mx:VBox>

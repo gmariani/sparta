@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:comp="cv.sparta.components.*" 
+	width="600" height="500" 
+	title="Dreamweaver Toolbar">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.validators.Validator;
+			import mx.events.ValidationResultEvent;
+			import cv.sparta.components.ToolbarChildren;
+			import mx.controls.Alert;
+			
+			//http://help.adobe.com/en_US/Dreamweaver/10.0_Extending/WS5b3ccc516d4fbf351e63e3d117f53d72e9-7ff5.html
+			
+			public var tagType:String = "";
+            
+            private function savePopUp():void {
+            	var validatorArr:Array = [validID,validLabel,validChildren];
+            	if(validRelative.required) validatorArr.push(validRelative);
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	var isValidForm:Boolean = validatorErrorArray.length == 0;
+            	if (isValidForm) {
+                    dispatchEvent(new Event('SAVE'));
+            		closePopUp();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Toolbar...", Alert.OK);
+                }
+            }
+            
+            private function closePopUp():void {
+            	PopUpManager.removePopUp(this)
+            }
+            
+            public function updateRelative():void {
+            	if(ddPosition.selectedItem.data == "below") {
+            		validRelative.required = true;
+            		validRelative.source = txtRelative;
+            		formRelative.required = true;
+            	} else {
+            		validRelative.required = false;
+            		validRelative.source = null;
+            		formRelative.required = false;
+            	}
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="validID" required="true" source="{txtID}" property="text" minLength="2" />
+	<mx:StringValidator id="validLabel" required="true" source="{txtLabel}" property="text" minLength="2" />
+	<mx:StringValidator id="validRelative" property="text" minLength="2" />
+	<mx:NumberValidator id="validChildren" required="true" lowerThanMinError="Must have atleast one child tag." source="{cmpChildren}" property="length" minValue="1" />
+
+	<mx:Form width="100%" height="100%">
+		<mx:FormItem label="ID" width="100%" height="100%" required="true">
+			<mx:toolTip>An identifier string must be unique within a file and within all files that the file includes. The JavaScript API functions that manipulate a toolbar refer to it by its ID. For more information on these functions, see the Dreamweaver API Reference. If two toolbars that are included in the same file have the same ID, Dreamweaver displays an error.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Label" width="100%" height="100%" required="true">
+			<mx:toolTip>The label attribute specifies the label, which is a character string, that Dreamweaver displays to the user. The label appears in the View >Toolbars menu and in the title bar of the toolbar when it’s floating.</mx:toolTip>
+			<mx:TextInput id="txtLabel" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Container" width="100%" height="100%">
+			<mx:toolTip>Specifies where the toolbar should dock in the Dreamweaver workspace on Windows. If the container is set to "mainframe", the toolbar appears in the outer workspace frame and operates on the front document. If the container is set to "document", the toolbar appears in each document window. On the Macintosh, all toolbars appear in each document window.</mx:toolTip>
+			<mx:ComboBox id="ddContainer">
+				<mx:dataProvider>
+					<mx:Array>
+						<mx:Object label="Main Frame" data="mainframe" />
+						<mx:Object label="Document" data="document" />
+					</mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Initially Visible?" width="100%" height="100%">
+			<mx:toolTip>This tag specifies whether the toolbar should be visible the first time that Dreamweaver loads it from the Toolbars folder. After the first time, the user controls visibility. Dreamweaver saves the current state to the system registry (Windows) or the Dreamweaver Preferences file (Macintosh) when the user quits Dreamweaver. Dreamweaver restores the setting from the registry or the Preferences file when it restarts. You can manipulate toolbar visibility using the dom.getToolbarVisibility() and dom.setToolbarVisibility() functions, as described in the Dreamweaver API Reference. If you do not set the initially-Visible attribute, it defaults to true.</mx:toolTip>
+			<mx:CheckBox id="cbVisible" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Initial Position" width="100%" height="100%">
+			<mx:toolTip>Specifies where Dreamweaver initially positions the toolbar, relative to other toolbars, the first time that Dreamweaver loads it.</mx:toolTip>
+			<mx:ComboBox id="ddPosition" change="updateRelative()">
+				<mx:dataProvider>
+					<mx:Array>
+						<mx:Object label="Default" data="" tip="If you do not specify the initialPosition attribute, Dreamweaver positions the toolbar in the order that it is encountered during loading." />
+						<mx:Object label="Top" data="top" tip="This is the default position, so the toolbar appears at the top of the document window. If multiple toolbars specify top for a given window type, the toolbars appear in the order that Dreamweaver encounters them during loading, which might not be predictable, if the toolbars reside in separate files." />
+						<mx:Object label="Below" data="below" tip="The toolbar appears at the beginning of the row immediately below the toolbar that the relativeTo attribute specifies. Dreamweaver reports an error if the relativeTo toolbar isn’t found. If multiple toolbars specify below relative to the same toolbar, they appear in the order that Dreamweaver encounters them during loading, which might not be predictable if the toolbars reside in separate files." />
+						<mx:Object label="Floating" data="floating" tip="Toolbar is not initially docked to the window; it floats above the document. Dreamweaver automatically places the toolbar so it is offset from other floating toolbars. On the Macintosh, floating is treated the same as top." />
+					</mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		
+		<mx:FormItem id="formRelative" label="Relative To" width="100%" height="100%">
+			<mx:toolTip>This attribute is required if the initialPosition attribute specifies below. Otherwise, it is ignored. Specifies the ID of the toolbar below which this toolbar should be positioned.</mx:toolTip>
+			<mx:TextInput id="txtRelative" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Child Tags" width="100%" height="100%" required="true">
+			<comp:ToolbarChildren id="cmpChildren" width="100%" height="200"/>
+		</mx:FormItem>
+		
+		<mx:HBox width="100%" horizontalAlign="center">
+			<mx:Button label="Ok" click="savePopUp()"/>
+			<mx:Button label="Cancel" click="closePopUp()"/>
+		</mx:HBox>
+	</mx:Form>
+</mx:TitleWindow>

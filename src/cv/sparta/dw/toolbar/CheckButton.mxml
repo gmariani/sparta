@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RadioButton xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="cv.sparta.dw.toolbar.*" title="Dreamweaver Toolbar Check Button" width="500">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import mx.containers.HBox;
+			import mx.containers.FormItem;
+			
+			override public function get data():Object {
+				var obj:Object = super.data;
+				obj.data.tagType = "CheckButton";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = cv.sparta.dw.toolbar.RadioButton.getEmptyData();
+				obj.data.tagType = "CheckButton";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = cv.sparta.dw.toolbar.RadioButton.xmlToObject(f);
+				obj.data.tagType = "CheckButton";
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<checkbutton';
+				str += ' id="' + obj.data.id + '"';
+				str += ' image="' + obj.data.image + '"';
+				str += ' tooltip="' + obj.data.tooltip + '"';
+				str += ' checked="' + obj.data.checked + '"';
+				str += ' command="' + obj.data.command + '"';
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				if(obj.data.disabledImage.length > 0) str += ' disabledImage="' + obj.data.disabledImage + '"';
+				if(obj.data.overImage.length > 0) str += ' overImage="' + obj.data.overImage + '"';
+				if(obj.data.label.length > 0) str += ' label="' + obj.data.label + '"';
+				if(obj.data.file.length > 0) str += ' file="' + obj.data.file + '"';
+				if(obj.data.domRequired) str += ' domRequired="' + obj.data.domRequired + '"';
+				if(obj.data.enabled.length > 0) str += ' enabled="' + obj.data.enabled + '"';
+				if(obj.data.update.length > 0) str += ' update="' + obj.data.update + '"';
+				if(obj.data.arguments.length > 0) str += ' arguments="' + obj.data.arguments + '"';
+				str += ' />';
+				return str;
+			}
+			
+			override protected function validateForm():void {
+            	var validatorArr:Array = [valItemID, valImage, valTooltip, valChecked, valCommand];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Check Button...", Alert.OK);
+                }
+            }
+		]]>
+	</mx:Script>
+</RadioButton>

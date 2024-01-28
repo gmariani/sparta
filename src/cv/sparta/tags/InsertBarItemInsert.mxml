@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:comp="cv.sparta.components.*" width="400" >
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.HBox;
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var acLanguages:ArrayCollection;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtItemID.text = obj.data.itemID;
+				txtCatID.text = obj.data.categoryID;
+				txtCat.text = obj.data.category;
+				cmpInsertBar.data = obj.data.childTags;
+				var i:String;
+				for(i in ddBefore.dataProvider) {
+					if(ddBefore.dataProvider[i].data == obj.data.before) {
+						ddBefore.selectedItem = ddBefore.dataProvider[i];
+						break;
+					}
+				}
+				for(i in ddAppend.dataProvider) {
+					if(ddAppend.dataProvider[i].data == obj.data.append) {
+						ddAppend.selectedItem = ddAppend.dataProvider[i];
+						break;
+					}
+				}
+				for(i in ddLanguage.dataProvider) {
+					if(ddLanguage.dataProvider[i].data == obj.data.language) {
+						ddLanguage.selectedItem = ddLanguage.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.itemID = txtItemID.text;
+				obj.data.categoryID = txtCatID.text;
+				obj.data.category = txtCat.text;
+				obj.data.before = ddBefore.selectedItem.data;
+				obj.data.append = ddAppend.selectedItem.data;
+				obj.data.language = ddLanguage.selectedItem.data;
+				obj.data.childTags = cmpInsertBar.data as Array;
+				obj.data.stackType = "insert-item";
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.itemID = "";
+				obj.data.categoryID = "";
+				obj.data.category = "";
+				obj.data.tag = "";
+				obj.data.before = ddBefore.dataProvider[0].data;
+				obj.data.append = ddAppend.dataProvider[0].data;
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				obj.data.childTags = [];
+				obj.data.stackType = "insert-item";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.itemID = "";
+				
+				obj.data.before = ddBefore.dataProvider[0].data;
+				if("@insertBefore" in f) {
+					obj.data.itemID = f.@insertBefore.toString();
+					obj.data.before = ddBefore.dataProvider[0].data;
+				} else if("@insertAfter" in f) {
+					obj.data.itemID = f.@insertAfter.toString();
+					obj.data.before = ddBefore.dataProvider[1].data;
+				}
+				
+				obj.data.append = ddAppend.dataProvider[0].data;
+				if("@appendTo" in f) {
+					obj.data.categoryID = f.@appendTo.toString();
+					obj.data.append = ddAppend.dataProvider[0].data;
+				} else if("@prependTo" in f) {
+					obj.data.categoryID = f.@prependTo.toString();
+					obj.data.append = ddAppend.dataProvider[1].data;
+				}
+				
+				obj.data.category = "";
+				if("@category" in f) obj.data.category = f.@category.toString();
+				
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				if(f.@xmlNS::lang && f.@xmlNS::lang.toString().length > 0) {
+					obj.data.language = f.@xmlNS::lang.toString();
+				}
+				
+				obj.data.childTags = cv.sparta.components.InsertBarChildren.xmlToArray(f);
+				
+				obj.data.stackType = "insert-item";
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<insertbar-item-insert";
+				str += ' ' + obj.data.before + '="' + obj.data.itemID + '"';
+				str += ' ' + obj.data.append + '="' + obj.data.categoryID + '"';
+				str += ' category="' + obj.data.category + '"';
+				str += ' xml:lang="' + obj.data.language + '"';
+				str += ">";
+				str += cv.sparta.components.InsertBarChildren.arrayToString(obj.data.childTags);
+				str += "</insertbar-item-insert>";
+				return str;
+			}
+			
+			public function reset():void {
+				ddBefore.selectedIndex = 0;
+				txtItemID.text = "";
+				txtItemID.errorString = "";
+				ddAppend.selectedIndex = 0;
+				txtCatID.text = "";
+				txtCatID.errorString = "";
+				txtCat.text = "";
+				txtCat.errorString = "";
+				ddLanguage.selectedIndex = 0;
+				cmpInsertBar.reset();
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valItemID, valCatID, valCat, valInsertbarComp];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Insertbar Item...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valItemID" required="true" source="{txtItemID}" property="text" minLength="2" />
+	<mx:StringValidator id="valCatID" required="true" source="{txtCatID}" property="text" minLength="2" />
+	<mx:StringValidator id="valCat" required="true" source="{txtCat}" property="text" minLength="2" />
+	<mx:NumberValidator id="valInsertbarComp" source="{cmpInsertBar}" property="length" minValue="1" lowerThanMinError="Must have atleast one child tag." />
+	
+	<mx:FormHeading label="Insert Insertbar Item" width="100%" textAlign="center"/>
+	
+	<mx:FormItem label="Item ID" width="100%" required="true">
+		<mx:toolTip>ID of the existing category to insert before or after.</mx:toolTip>
+		<mx:HBox width="100%">
+			<mx:ComboBox id="ddBefore">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="insertBefore" label="Before" />
+		                <mx:Object data="insertAfter" label="After" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+			
+			<mx:TextInput id="txtItemID" width="100%" />
+		</mx:HBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Category ID" width="100%" required="true">
+		<mx:toolTip>ID of the existing category to insert before or after.</mx:toolTip>
+		<mx:HBox width="100%">
+			<mx:ComboBox id="ddAppend">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="appendTo" label="Append To" />
+		                <mx:Object data="prependTo" label="Prepend To" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+			
+			<mx:TextInput id="txtCatID" width="100%" />
+		</mx:HBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Category" width="100%" required="true">
+		<mx:toolTip>ID of the category to append to if the insertBefore|insertAfter item isn't found.</mx:toolTip>
+		<mx:TextInput id="txtCat" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Language" width="100%">
+		<mx:toolTip>Specifies the language for the listed file. Extension Manager compares this language with the user language. If the languages match, configuration changes are applied; if not, they are ignored. If Extension Manager can't determine the user language, it applies all configuration changes regardless of their specified language.</mx:toolTip>
+		<mx:ComboBox id="ddLanguage" dataProvider="{acLanguages}"/>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Child Tags" width="100%" required="true">
+		<comp:InsertBarChildren id="cmpInsertBar" width="100%" height="200" />
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

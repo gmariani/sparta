@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TabNavigator 
+		xmlns:sparta="cv.sparta.*" 
+		xmlns:mxi="cv.sparta.tags.*" 
+		xmlns:mx="http://www.adobe.com/2006/mxml" 
+		width="400" height="300" 
+		label="Dreamweaver Only" 
+		creationPolicy="all" 
+		paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="10">
+	
+	<mx:toolTip>Container tag for tags that modify Dreamweavers’s configuration. These include menus, shortcuts, server behaviors, and data sources.</mx:toolTip>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]
+			public var languagesList:ArrayCollection;
+			
+			public function reset():void {
+				//frmToolPanel.reset();
+				frmFTP.reset();
+				frmInsertBar.reset();
+				frmServerB.reset();
+				frmServerF.reset();
+				frmServerFD.reset();
+				frmServerDS.reset();
+				frmShortcut.reset();
+				frmTagLibrary.reset();
+				frmToolBar.reset();
+				frmExtensions.reset();
+				
+				this.selectedIndex = 0;
+			}
+			
+			public function setXML(value:XML):void {
+				//frmToolPanel.setXML(value);
+				frmFTP.setXML(value);
+				frmInsertBar.setXML(value);
+				frmServerB.setXML(value);
+				frmServerF.setXML(value);
+				frmServerFD.setXML(value);
+				frmServerDS.setXML(value);
+				frmShortcut.setXML(value);
+				frmTagLibrary.setXML(value);
+				frmToolBar.setXML(value);
+				frmExtensions.setXML(value);
+			}
+			
+			public function getXML():String {
+				var str:String = "";//"<configuration-changes>";
+				//str += frmToolPanel.getXML();
+				str += frmFTP.getXML();
+				str += frmInsertBar.getXML();
+				str += frmServerB.getXML();
+				str += frmServerF.getXML();
+				str += frmServerFD.getXML();
+				str += frmServerDS.getXML();
+				str += frmShortcut.getXML();
+				str += frmTagLibrary.getXML();
+				str += frmToolBar.getXML();
+				str += frmExtensions.getXML();
+				//str += "</configuration-changes>";
+				return str;
+			}
+		]]>
+	</mx:Script>
+
+	<!--<sparta:ToolPanel id="frmToolPanel" languages="{languagesList}" width="100%" height="100%" />-->
+	<mxi:FTPExtensionMapChanges id="frmFTP" width="100%" height="100%" />
+	<mxi:InsertBarChanges id="frmInsertBar" languages="{languagesList}" width="100%" height="100%" />
+	<mxi:ServerBehaviorChanges id="frmServerB" languages="{languagesList}" tagType="0" width="100%" height="100%" />
+	<mxi:ServerBehaviorChanges id="frmServerF" languages="{languagesList}" tagType="1" width="100%" height="100%" />
+	<mxi:ServerBehaviorChanges id="frmServerFD" languages="{languagesList}" tagType="2" width="100%" height="100%" />
+	<mxi:ServerBehaviorChanges id="frmServerDS" languages="{languagesList}" tagType="3" width="100%" height="100%" />
+	<sparta:Shortcut id="frmShortcut" languages="{languagesList}" width="100%" height="100%" />
+	<mxi:TagLibraryChanges id="frmTagLibrary" languages="{languagesList}" width="100%" height="100%" />
+	<mxi:ToolbarChanges id="frmToolBar" languages="{languagesList}" width="100%" height="100%" />
+	<mxi:ExtensionsChanges id="frmExtensions" languages="{languagesList}" width="100%" height="100%" />
+</mx:TabNavigator>

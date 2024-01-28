@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="400" 
+	label="Products" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10"
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import cv.sparta.editor.ProductEditor;
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			import mx.events.ListEventReason;
+			
+			/*
+			[NativeDragEvent type="nativeDragDrop" bubbles=true cancelable=true localX=163 localY=71 
+			stageX=616 stageY=215 relatedObject=Sparta0.VBox18.container.frmProducts.HDividedBox263.VBox264.origlist 
+			clipboard=[object Clipboard] allowedActions=[NativeDragOptions allowCopy=true,allowMove=true,allowLink=true] 
+			dropAction="move" controlKey=false altKey=false shiftKey=false commandKey=false]
+			*/
+		
+			public function reset():void {
+				origlist.dataProvider = new ArrayCollection([
+					{label:"Bridge CS4", name:"Bridge", data:"3", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Bridge CS5", name:"Bridge", data:"4", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Contribute CS4", name:"Contribute", data:"5", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Contribute CS5", name:"Contribute", data:"6", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Dreamweaver MX 2004", name:"Dreamweaver", data:"7", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Dreamweaver 8", name:"Dreamweaver", data:"8", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Dreamweaver CS3", name:"Dreamweaver", data:"9", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Dreamweaver CS4", name:"Dreamweaver", data:"10", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Dreamweaver CS5", name:"Dreamweaver", data:"11", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Fireworks MX 2004", name:"Fireworks", data:"7", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Fireworks 8", name:"Fireworks", data:"8", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Fireworks CS3", name:"Fireworks", data:"9", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Fireworks CS4", name:"Fireworks", data:"10", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Fireworks CS5", name:"Fireworks", data:"11", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Flash MX", name:"Flash", data:"6", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Flash MX 2004", name:"Flash", data:"7", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Flash 8", name:"Flash", data:"8", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Flash CS3", name:"Flash", data:"9", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Flash CS4", name:"Flash", data:"10", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Flash CS5", name:"Flash", data:"11", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Illustrator CS4", name:"Illustrator", data:"14", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Illustrator CS5", name:"Illustrator", data:"15", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"InCopy CS4", name:"InCopy", data:"6", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"InCopy CS5", name:"InCopy", data:"7", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"InDesign CS4", name:"InDesign", data:"6", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"InDesign CS5", name:"InDesign", data:"7", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Photoshop CS4", name:"Photoshop32", data:"11", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Photoshop CS4 x64", name:"Photoshop64", data:"11", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Photoshop CS5", name:"Photoshop32", data:"12", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Photoshop CS5 x64", name:"Photoshop64", data:"12", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""},
+					{label:"Premiere Pro CS5", name:"Premiere", data:"5", isPrimary:false, isRequired:false, maxVersion:"", familyName:"", bit:""}
+				]);
+				destlist.dataProvider = null;
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				var obj:Object;
+				var tempColl:ArrayCollection = new ArrayCollection([]);
+				for each(var p:XML in value.products.product) {
+					for(var i:String in origlist.dataProvider) {
+						var item:Object = origlist.dataProvider[i];
+						if("@version" in p && "@name" in p) {
+							if(item.data == p.@version.toString() && String(item.label).indexOf(p.@name.toString()) != -1) {
+								obj = new Object();
+								obj.label = item.label;
+								obj.data = item.data;
+								obj.isPrimary = Boolean("@primary" in p && p.@primary.toString() == "true");
+								obj.isRequired = Boolean("@required" in p && p.@required.toString() == "true");
+								obj.maxVersion = "@maxversion" in p ? p.@maxversion.toString() : "";
+								obj.familyName = "@familyname" in p ? p.@familyname.toString() : "";
+								obj.bit = "@bit" in p ? p.@bit.toString() : "";
+								tempColl.addItem(obj);
+								ArrayCollection(origlist.dataProvider).removeItemAt(int(i));
+								break;
+							}
+						}
+					}
+				}
+				destlist.dataProvider = tempColl;
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				
+				var strProducts:String = "";
+				for(var i:String in destlist.dataProvider) {
+					var item:Object = destlist.dataProvider[i];
+					strProducts += "<product";
+					strProducts += " name=\"" + item.label + '"';
+					strProducts += " version=\"" + item.data + '"';
+					strProducts += item.isPrimary ? " primary=\"" + String(item.isPrimary) + '"' : "";
+					strProducts += item.isRequired ? " required=\"" + String(item.isRequired) + '"' : "";
+					strProducts += (item.maxVersion && item.maxVersion.length > 0) ? " maxversion=\"" + item.maxVersion + '"' : "";
+					strProducts += (item.familyName && item.familyName.length > 0) ? " familyname=\"" + item.familyName + '"' : "";
+					strProducts += (item.bit > 0) ? " bit=\"" + item.bit + '"' : "";
+					strProducts += " />";
+				}
+				
+				if(strProducts.length > 0) {
+					str += "<products>";
+					str += strProducts;
+					str += "</products>";
+				}
+				
+				return str;
+			}
+			
+			private function processOrigData(event:ListEvent):void {
+                if (event.reason == ListEventReason.CANCELLED) return;   
+				
+                // Disable copying data back to the control.
+                event.preventDefault();
+
+                // Get data
+                var editor:ProductEditor = ProductEditor(List(event.target).itemEditorInstance);
+                origlist.editedItemRenderer.data.isPrimary = editor.cbPrimary.selected;
+                origlist.editedItemRenderer.data.isRequired = editor.cbRequired.selected;
+                origlist.editedItemRenderer.data.maxVersion = editor.txtMaxVersion.text;
+                origlist.editedItemRenderer.data.familyName = editor.txtFamilyName.text;
+                origlist.editedItemRenderer.data.bit = editor.ddBit.selectedItem.data;
+
+                // Close the cell editor.
+                origlist.destroyItemEditor();
+
+                // Notify the list control to update its display.
+                origlist.dataProvider.itemUpdated(event.itemRenderer.data);
+            }
+            
+            private function processDestData(event:ListEvent):void {
+                if (event.reason == ListEventReason.CANCELLED) return;   
+				
+                // Disable copying data back to the control.
+                event.preventDefault();
+
+                // Get data
+                var editor:ProductEditor = ProductEditor(List(event.target).itemEditorInstance);
+                destlist.editedItemRenderer.data.isPrimary = editor.cbPrimary.selected;
+                destlist.editedItemRenderer.data.isRequired = editor.cbRequired.selected;
+                destlist.editedItemRenderer.data.maxVersion = editor.txtMaxVersion.text;
+                destlist.editedItemRenderer.data.familyName = editor.txtFamilyName.text;
+                destlist.editedItemRenderer.data.bit = editor.ddBit.selectedItem.data;
+
+                // Close the cell editor.
+                destlist.destroyItemEditor();
+
+                // Notify the list control to update its display.
+                destlist.dataProvider.itemUpdated(event.itemRenderer.data);
+            }
+            
+            private function listLabel(obj:Object):String {
+            	var hasProps:Boolean = false;
+				var str:String = "";
+				str += obj.label;
+				if(obj.isPrimary) {
+					str += "  (Primary";
+					hasProps = true;
+				}
+				if(obj.isRequired) {
+					str += (hasProps ? " | " : "  (") + "Required";
+					hasProps = true;
+				}
+				if(obj.maxVersion.length > 0) {
+					str += (hasProps ? " | " : "  (") + "Max Version: " + obj.maxVersion;
+					hasProps = true;
+				}
+				
+				if(obj.familyName.length > 0) {
+					str += (hasProps ? " | " : "  (") + "Family Name: " + obj.familyName;
+					hasProps = true;
+				}
+				
+				if(obj.bit > 0) {
+					str += (hasProps ? " | " : "  (") + "Bit: " + obj.bit;
+					hasProps = true;
+				}
+				if(hasProps) str += ")";
+				return str;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:FormHeading label="Products" width="100%">
+		<mx:toolTip>Container tag for product tags.</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:HDividedBox width="100%" height="100%">
+		<mx:VBox width="50%" height="100%" horizontalAlign="center">
+			<mx:Label text="Available Products"/>
+			<mx:List 
+				id="origlist" 
+				wordWrap="true"
+				labelFunction="listLabel" 
+				width="100%" 
+				height="100%" 
+				allowMultipleSelection="true" 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ProductEditor"
+				rowHeight="65"
+				itemEditEnd="processOrigData(event)" 
+				dragEnabled="true" 
+				dropEnabled="true" 
+				dragMoveEnabled="true" />
+		</mx:VBox>
+		<mx:VBox width="50%" height="100%" horizontalAlign="center">
+			<mx:Label text="Targeted Products"/>
+			<mx:List 
+				id="destlist" 
+				wordWrap="true"
+				labelFunction="listLabel" 
+				width="100%" 
+				height="100%" 
+				allowMultipleSelection="true" 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ProductEditor"
+				rowHeight="65"
+				itemEditEnd="processDestData(event)" 
+				dragEnabled="true" 
+				dropEnabled="true" 
+				dragMoveEnabled="true" />
+		</mx:VBox>
+	</mx:HDividedBox>
+</mx:VBox>

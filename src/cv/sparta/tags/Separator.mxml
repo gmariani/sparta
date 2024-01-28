@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="400" 
+	title="Separator">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtID.text = obj.data.id;
+				for(var i:String in ddPlatform.dataProvider) {
+					var strType:String = String(obj.data.platform).toLowerCase().split(" ").join("");
+					var strData:String = String(ddPlatform.dataProvider[i].data).toLowerCase().split(" ").join("");
+					if(strData == strType) {
+						ddPlatform.selectedItem = ddPlatform.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = txtID.text;
+				obj.data.platform = ddPlatform.selectedItem.data;
+				obj.data.tagType = "Separator";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.platform = "";
+				obj.data.tagType = "Separator";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id = f.@id.toString();
+				
+				obj.data.platform = "";
+				if("@platform" in f) obj.data.platform = f.@platform.toString();
+				
+				obj.data.tagType = "Separator";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = "<separator";
+				str += ' id="' + obj.data.id + '"';
+				if(obj.data.platform.length > 0) str += ' platform="' + obj.data.platform + '"';
+				str += " />";
+				return str;
+			}
+			
+			public function reset():void {
+				txtID.text = "";
+				ddPlatform.selectedIndex = 0;
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Separator...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valID" required="true" source="{txtID}" property="text" />
+	
+	<mx:Form width="100%" height="100%">
+		
+		<mx:FormItem label="ID" width="100%" required="true" >
+			<mx:toolTip>The ID for the separator; each separator ID must be unique. Your separator IDs should start with a company name or some other namespace prefix to ensure uniqueness. In particular, don’t start your IDs with DW, which is the prefix used by the Dreamweaver menu IDs. One useful approach is to prefix every ID with your domain name (with the elements reversed); for example, if your domain name is joe.com, you could start every ID with com.joe. to ensure uniqueness.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Platform" width="100%">
+			<mx:toolTip>Indicates that the separator should appear only on the given platform.</mx:toolTip>
+			<mx:ComboBox id="ddPlatform">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="" label="Mac and PC" />
+		                <mx:Object data="win" label="PC Only" />
+		                <mx:Object data="mac" label="Mac Only" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

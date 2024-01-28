@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="450" height="450" >
+	
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import flash.filesystem.File;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var defaultTokens:ArrayCollection;
+			
+			[Bindable]
+			public var tokensList:ArrayCollection = new ArrayCollection([]);
+			
+			override public function set data(obj:Object):void {
+				reset();
+				var i:String;
+				var strType:String;
+				var strData:String;
+				
+				txtSource.text = obj.data.source;
+				txtDestination.text = obj.data.destination;
+				for(i in ddPlatform.dataProvider) {
+					strType = String(obj.data.platform).toLowerCase().split(" ").join("");
+					strData = String(ddPlatform.dataProvider[i].data).toLowerCase().split(" ").join("");
+					if(strData == strType) {
+						ddPlatform.selectedItem = ddPlatform.dataProvider[i];
+						break;
+					}
+				}
+				cbShared.selected = Boolean(obj.data.shared == true);
+				cbSystem.selected = Boolean(obj.data.systemfile == true);
+				txtWinExt.text = obj.data.winExt;
+				cbResource.selected = obj.data.isresourcefile;
+				
+				for(i in ddFileType.dataProvider) {
+					strType = String(obj.data.fileType).toLowerCase().split(" ").join("");
+					strData = String(ddFileType.dataProvider[i].data).toLowerCase().split(" ").join("");
+					if(strData == strType) {
+						ddFileType.selectedItem = ddFileType.dataProvider[i];
+						break;
+					}
+				}
+
+				txtFileMinVersion.text = obj.data.minVersion;
+				txtFileMaxVersion.text = obj.data.maxVersion;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.source = txtSource.text;
+				obj.data.destination = txtDestination.text;
+				obj.data.platform = ddPlatform.selectedItem.data;
+				obj.data.shared = cbShared.selected;
+				obj.data.systemfile = cbSystem.selected;
+				obj.data.winExt = txtWinExt.text;
+				obj.data.isresourcefile = cbResource.selected;
+				obj.data.fileType = ddFileType.selectedItem.data;
+				obj.data.minVersion = txtFileMinVersion.text;
+				obj.data.maxVersion = txtFileMaxVersion.text;
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.source = "";
+				obj.data.destination = "";
+				obj.data.platform = "";
+				obj.data.shared = false;
+				obj.data.systemfile = false;
+				obj.data.winExt = "";
+				obj.data.isresourcefile = false;
+				obj.data.fileType = "";
+				obj.data.minVersion = "";
+				obj.data.maxVersion = "";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.source = "";
+				if("@source" in f && f.@source.toString().length > 0) {
+					obj.data.source = f.@source.toString();
+				} else {
+					obj.data.source = f.@name.toString();
+				}
+				
+				obj.data.destination = "";
+				if("@destination" in f) obj.data.destination = f.@destination.toString();
+				
+				obj.data.platform = "";
+				if("@platform" in f) obj.data.platform = f.@platform.toString();
+				
+				obj.data.shared = false;
+				if("@shared" in f && f.@shared.toString() == "true") obj.data.shared = true;
+				
+				obj.data.systemfile = false;
+				if("@systemfile" in f && f.@systemfile.toString() == "true") obj.data.systemfile = true;
+				
+				obj.data.winExt = "";
+				if("@win-extension" in f) obj.data.winExt = f.@["win-extension"].toString();
+				
+				obj.data.isresourcefile = false;
+				if("@isresourcefile" in f && f.@isresourcefile.toString() == "true") obj.data.isresourcefile = true;
+				
+				obj.data.fileType = "";
+				if("@file-type" in f) obj.data.fileType = f.@["file-type"].toString();
+				
+				obj.data.minVersion = "";
+				if("@minVersion" in f) obj.data.minVersion = f.@minVersion.toString();
+				
+				obj.data.maxVersion = "";
+				if("@maxVersion" in f) obj.data.maxVersion = f.@maxVersion.toString();
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<file";
+				str += ' source="' + obj.data.source + '"';
+				str += ' destination="' + obj.data.destination + '"';
+				if(obj.data.platform.length > 0) str += ' platform="' + obj.data.platform + '"';
+				str += ' shared="' + obj.data.shared + '"';
+				str += ' systemfile="' + obj.data.systemfile + '"';
+				if(obj.data.winExt.length > 0) str += ' win-extension="' + obj.data.winExt + '"';
+				str += ' isresourcefile="' + obj.data.isresourcefile + '"';
+				if(obj.data.fileType.length > 0) str += ' file-type="' + obj.data.fileType + '"';
+				if(obj.data.minVersion.length > 0) str += ' minVersion="' + obj.data.minVersion + '"';
+				if(obj.data.maxVersion.length > 0) str += ' maxVersion="' + obj.data.maxVersion + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtSource.text = "";
+				txtSource.errorString = "";
+				txtDestination.text = "";
+				txtDestination.errorString = "";
+				ddPlatform.selectedItem = ddPlatform.dataProvider[0];
+				cbShared.selected = false;
+				cbSystem.selected = false;
+				txtWinExt.text = "";
+				cbResource.selected = false;
+				ddFileType.selectedItem = ddFileType.dataProvider[0];
+				txtFileMinVersion.text = "";
+				txtFileMaxVersion.text = "";
+			}
+			
+			private function onClickBrowse():void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			private function onFileSelection(event:Event):void {
+				txtSource.text = flash.filesystem.File(event.target).name;
+			}
+			
+			// Append token file
+			private function onItemClick(event:Event):void {
+				if(event.currentTarget.selectedItem.data is String) {
+					// Default Token
+					txtDestination.text += event.currentTarget.selectedItem.data;
+				} else {
+					// Custom Token
+					txtDestination.text += event.currentTarget.selectedItem.label;
+				}
+			}
+			
+			private function dataTip(value:Object):String {
+				return value.data;
+			}
+            
+            private function validateForm():void {
+            	var validatorArr:Array = [valSource, valDest];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid File...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valSource" required="true" source="{txtSource}" property="text" minLength="2" />
+	<mx:StringValidator id="valDest" required="true" source="{txtDestination}" property="text" minLength="2" />
+	
+	<mx:FormItem label="File Name" width="100%" required="true">
+		<mx:toolTip><![CDATA[The name of the file. It can include a path relative to the location of the installation file; the extension’s files don’t all have to be in the same folder. The filename must be a valid name on both Windows and Macintosh, unless you specify a value for the platform attribute. You can use a colon (:), slash (/), or backslash (\) as the separator between folder names (and before the filename) in the path. Note that in some operating systems, filenames are case-sensitive; make sure to use the same capitalization in the source attribute as you use for the corresponding file and folder names on your disk. Filenames should be a total of 30 characters or less.<br/><br/>Do not use the same filenames as Adobe extensions unless your extension is intended as a substitute for a Adobe extension.]]></mx:toolTip>
+		<mx:HBox width="100%">
+			<mx:TextInput id="txtSource" width="100%" />
+			<mx:Button label="Browse" click="onClickBrowse()"/>
+		</mx:HBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="File Destination" width="100%" required="true">
+		<mx:toolTip><![CDATA[The name of the folder the file will be copied to. If the folder doesn’t exist, the Extension Manager creates it during installation. Note that this attribute should contain a folder name, not a filename. The filename is specified by the source attribute.<br/><br/>The Extension Manager picks the appropriate system and font folder on the user’s disk, based on the user’s platform and operating system. If none of these options suits your needs, you can define your own custom tokens for the destination of your files.<br/><br/>Generally, destination folders should be inside the application’s Configuration folder. The destination attribute is not case-sensitive; configuration is the same as Configuration. The folder name must be a valid name on both Windows and Mac OS, unless you specify a value for the platform attribute. You can use a colon (:), slash (/), or backslash (\) as the separator between folder names in the path. Note that in some operating systems, folder names are case-sensitive; make sure to use the correct capitalization for your folder names.<br/><br/>If your extension for Dreamweaver contains multiple files, such as help files, many images, or a suite of items, the destination folder for your files should be a folder in the Configuration/Shared folder. The folder name should be related to your company or product—for example, Configuration/Shared/MagicTricks.<br/><br/>You do not need to include the Configuration folder in the path name for Flash extensions. The folder specified in the destination tag is automatically created in the Configuration folder if it does not already exist.]]></mx:toolTip>
+		<mx:TextInput id="txtDestination" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Tokens" width="100%">
+		<mx:List variableRowHeight="true" wordWrap="true" dataProvider="{tokensList}" width="100%" height="75" itemClick="onItemClick(event)" showDataTips="true" dataTipFunction="dataTip"/>
+	</mx:FormItem>
+	
+	<mx:FormItem label="File Platform" width="100%">
+		<mx:toolTip>Indicates what platform the file is intended for. If you specify a platform, the file is installed only on that platform; for instance, you can provide two versions of a file, one for Windows and one for Macintosh, and specify a platform value for each.</mx:toolTip>
+		<mx:ComboBox id="ddPlatform">
+			<mx:dataProvider>
+				<mx:Array>
+	                <mx:Object data="" label="Mac and PC" />
+	                <mx:Object data="win" label="PC Only" />
+	                <mx:Object data="mac" label="Mac Only" />
+	            </mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Shared?" width="100%">
+		<mx:toolTip><![CDATA[Indicates whether the file is used by more than one extension. When you use the Extension Manager to remove an extension, a shared file associated with that extension is not deleted as long as other installed extensions refer to that file.<br><br>Note: If you install a newer version of a shared file and another extension is using the old version of the file, the new shared file either must be backward compatible with the other extension, or must have a new filename so that the other extension continues to work properly.]]></mx:toolTip>
+		<mx:CheckBox id="cbShared" />
+	</mx:FormItem>
+	
+	<mx:FormItem width="100%">
+		<mx:Text width="100%" enabled="false" text="Note: If you install a newer version of a shared file and another extension is using the old version of the file, the new shared file either must be backward compatible with the other extension, or must have a new filename so that the other extension continues to work properly." />
+	</mx:FormItem>
+	
+	<mx:FormItem label="System File?" width="100%">
+		<mx:toolTip>Indicates whether the file is used by anything other than extensions. For example, some extensions provide new versions of DLLs or other system files, or files that are used by other applications. If a file is specified as systemfile = &quot;true&quot;, it is not deleted when the extension is removed, even if no other extensions use the file. When system file is set to true, the shared attribute is ignored.</mx:toolTip>
+		<mx:CheckBox id="cbSystem" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Win Extension" width="100%">
+		<mx:toolTip>Used when a file is generated on the Macintosh that does not include the Windows extension, such as .fla or .htm.</mx:toolTip>
+		<mx:TextInput id="txtWinExt" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem width="100%">
+		<mx:Text width="100%" enabled="false" text="Note: If you specify a platform, the Win Extension is ignored." />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Resource File? (2.1+)" width="100%">
+		<mx:toolTip><![CDATA[If set to true, this attribute flags the file as a resource file containing language-specific text strings. Place resource files in a folder with the name [installer prefix].mxi_Resources. When the MXI file is loaded, Extension Manager copies this folder into following location, where it then looks for text strings:<br/>Win XP: C:\Documents and Settings\All Users\Application Data\Adobe\Extension Manager CS5<br>Vista/Win7: C:\ProgramData\Adobe\Extension Manager CS5<br/>Mac OS: /Library/Application Support/Adobe/Extension Manager CS5]]></mx:toolTip>
+		<mx:CheckBox id="cbResource" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="File Type (5.0)" width="100%">
+		<mx:toolTip><![CDATA[Specifies the file type.<br><br>If this attribute is not specified, any file wrapped in files tag use the value of the attribute default-file-type in files tag. If attribute default-file-type is not specified either, its default value is "ordinary". The value specified by this attribute has more priority than value specified by the attribute default-file-type in wrapping files tag.]]></mx:toolTip>
+		<mx:ComboBox id="ddFileType" >
+			<mx:dataProvider>
+				<mx:Array>
+					<mx:Object data="" label="Default" />
+					<mx:Object data="ordinary" label="Ordinary" />
+					<mx:Object data="csxs" label="CS Extension Package" />
+	                <mx:Object data="plugin" label="Plug-in" />
+	            </mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Min Version" width="100%">
+		<mx:toolTip>Specifies the minimum and maximum version of the product to which the file will be installed. For example, if minVersion is 9 and maxVersion is 10, the file won't be installed in product version 8 or 11, but will be in product version 9. The correct format for this attribute is Major_Version_Number.Minor_Version_Number.Build_Number.</mx:toolTip>
+		<mx:TextInput id="txtFileMinVersion" restrict="0123456789." maxChars="5" width="50" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Max Version" width="100%">
+		<mx:toolTip>Specifies the minimum and maximum version of the product to which the file will be installed. For example, if minVersion is 9 and maxVersion is 10, the file won't be installed in product version 8 or 11, but will be in product version 9. The correct format for this attribute is Major_Version_Number.Minor_Version_Number.Build_Number.</mx:toolTip>
+		<mx:TextInput id="txtFileMaxVersion" restrict="0123456789." maxChars="5" width="50" />
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

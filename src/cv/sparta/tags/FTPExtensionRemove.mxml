@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtExtension.text = obj.data.extension;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.extension = txtExtension.text;
+				obj.data.stackType = "remove";
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.extension = "";
+				obj.data.stackType = "remove";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.extension = "";
+				if("@extension" in f) obj.data.extension = f.@extension;
+				
+				obj.data.stackType = "remove";
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<ftp-extension-remove";
+				str += ' extension="' + obj.data.extension + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtExtension.text = "";
+				txtExtension.errorString = "";
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valExtension];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid FTP Extension...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valExtension" required="true" source="{txtExtension}" property="text" minLength="2" />
+	
+	<mx:FormHeading label="Remove FTP Extension" width="100%" textAlign="center"/>
+	
+	<mx:FormItem label="Extension" width="100%" required="true" toolTip="The file extension, such as .gif or .jpg.">
+		<mx:TextInput id="txtExtension" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

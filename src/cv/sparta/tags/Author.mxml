@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="500" 
+	paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			public function reset():void {
+				txtAuthor.text = "";
+				txtAuthor.errorString = "";
+				txtResID.text = "";
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				if("author" in value) {
+					if("@name" in value.author) txtAuthor.text = value.author.@name.toString();
+					if("@author_resid" in value.author) txtResID.text = value.author.@author_resid.toString();
+				}
+			}
+		
+			public function getXML():String {
+				var str:String = "";
+				
+				if(txtAuthor.text.length > 0) {
+					str += '<author';
+					str += ' name="' + txtAuthor.text + '"';
+					
+					// Optional attribute for version 2.1
+					if(txtResID.text.length > 0) str += ' author_resid="' + txtResID.text + '"';
+				 	str += ' />';
+				}
+				
+				return str;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valAuthor" required="true" source="{txtAuthor}" property="text" minLength="2" />
+	
+	<mx:FormHeading label="Author"  width="100%" toolTip="Name of the author of the extension."/>
+	
+	<mx:FormItem label="Author Name" width="100%" required="true">
+		<mx:toolTip>Name of the author of the extension. Has a limit of 255 characters.</mx:toolTip>
+		<mx:TextInput id="txtAuthor" maxChars="255" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Author Res ID (2.1+)" width="100%">
+		<mx:toolTip>References string with value of “author_resid” in resource file, and displays that string in the “Author” field of the user interface.</mx:toolTip>
+		<mx:TextInput id="txtResID" width="100%" />
+	</mx:FormItem>
+</mx:Form>

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	label="Description" 
+	width="400" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.Form;
+			import mx.controls.TextInput;
+			import mx.events.ValidationResultEvent;
+          	import mx.validators.*;
+			
+			public function reset():void {
+				txtDescription.text = "";
+				txtDescription.errorString = "";
+				txtURL.text = "";
+				txtResID.text = "";
+				txtSource.text = "";
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				txtDescription.text = value.description.toString();
+				
+				if("@href" in value.description) txtURL.text = value.description.@href.toString();
+				if("@resid" in value.description) txtResID.text = value.description.@resid.toString();
+				if("@source" in value.description) txtSource.text = value.description.@source.toString();
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				if(txtDescription.text.length > 0) {
+					str += '<description';
+					
+					// Optional attribute for version 2.x that degrades gracefully
+					if(txtURL.text.length > 0 && txtURL.text.indexOf("http://") == 0 || txtURL.text.indexOf("https://") == 0) {
+						str += ' href="' + txtURL.text + '"';
+					}
+					
+					// Optional attribute for version 2.1
+					if(txtResID.text.length > 0) {
+						str += ' resid="' + txtResID.text + '"';
+					}
+					
+					// Optional attribute for version 2.x that DOES NOT degrade gracefully.
+					if(txtSource.text.length > 0) {
+						str += ' source="' + txtSource.text + '"';
+					}
+					
+					str += ' ><\!\[CDATA\[';
+					str += txtDescription.text;
+					str += '\]\]></description>';
+				}
+				
+				return str;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator required="true" source="{txtDescription}" property="text" />
+	
+	<mx:RegExpValidator id="regExpV" 
+        source="{txtURL}" property="text" 
+        flags="g" 
+        expression="^http://|^https://" 
+        required="false"
+        noMatchError="The value must start with either “http://” or “https://”" />
+	
+	<mx:FormHeading label="Description" width="100%">
+		<mx:toolTip><![CDATA[Describes what the extension does or is used for.<br/><br/>Note: If Source URL (href) is specified and computer is online, Extension Manger displays the URL in the description field. If source is specified, the local path is displayed for the description. If neither href nor source are specified, text in the Contents tag below is displayed.]]></mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:FormItem label="Description" width="100%" height="100%" required="true">
+		<mx:toolTip>Describes what the extension does or is used for. This tag contains a CDATA section, which you can format with any HTML tags. If text colors are unspecified, the background is gray (#626262), and the text is black.</mx:toolTip>
+		<mx:TextArea id="txtDescription" wordWrap="true" height="100%" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Res ID (2.1+)" width="100%">
+		<mx:toolTip>References string with value of “resid” in resource file. When users select an extension in Extension Manager, this string is displayed in the lower-right area of the user interface.</mx:toolTip>
+		<mx:TextInput id="txtResID" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Source URL (2.x+)" width="100%">
+		<mx:toolTip>Indicates online URL that will be displayed as the description of the extension. The value must start with either “http://” or “https://”.</mx:toolTip>
+		<mx:TextInput id="txtURL" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Source (2.x+)" width="100%">
+		<mx:toolTip>Indicates the relative path to the HTML file on the local computer, specified by the $ExtensionSpecificEMStore attribute.</mx:toolTip>
+		<mx:TextInput id="txtSource" width="100%" />
+	</mx:FormItem>
+</mx:Form>

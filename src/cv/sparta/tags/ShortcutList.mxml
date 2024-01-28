@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="500" title="Dreamweaver Menu Shortcut List" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtID.text = obj.data.id;
+				for(var i:String in ddPlatform.dataProvider) {
+					var strType:String = String(obj.data.platform).toLowerCase().split(" ").join("");
+					var strData:String = String(ddPlatform.dataProvider[i].data).toLowerCase().split(" ").join("");
+					if(strData == strType) {
+						ddPlatform.selectedItem = ddPlatform.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = txtID.text;
+				obj.data.platform = ddPlatform.selectedItem.data;
+				obj.data.tagType = "ShortcutList";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.platform = "";
+				obj.data.tagType = "ShortcutList";
+				return obj;
+			}
+			
+			public static function xmlToObject(t:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.id = "";
+				if("@id" in t && t.@id.toString().length > 0) obj.data.id = t.@id.toString();
+				
+				obj.data.platform = "";
+				if("@platform" in t) obj.data.platform = t.@platform.toString();
+				
+				obj.data.tagType = "ShortcutList";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = "<shortcutlist";
+				str += ' id="' + obj.data.id + '"';
+				if(obj.data.platform.length > 0) str += ' platform="' + obj.data.platform + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtID.text = "";
+				txtID.errorString = "";
+				ddPlatform.selectedIndex = 0;
+			}
+            
+            private function validateForm():void {
+            	var validatorArr:Array = [valID];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Shortcut List...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valID" required="true" source="{txtID}" property="text" />
+
+	<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" >
+	
+		<mx:FormItem label="Shortcut List ID" width="100%" required="true">
+			<mx:toolTip>ID for the new shortcut list. It should be the same as the menu ID for the menu bar that represents a window in Dreamweaver with which the shortcuts are associated. Currently supported IDs are DWMainWindow, DWMainSite, DWTimelineInspector, and DWHTMLInspector.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Platform" width="100%">
+			<mx:toolTip>Indicates that the shortcut list should appear only on the given platform. Valid values are "win" and "mac".</mx:toolTip>
+			<mx:ComboBox id="ddPlatform">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="" label="Mac and PC" />
+		                <mx:Object data="win" label="PC Only" />
+		                <mx:Object data="mac" label="Mac Only" />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:ComboBox>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

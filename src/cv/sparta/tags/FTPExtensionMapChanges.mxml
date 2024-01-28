@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" height="300" 
+	label="FTP Extension Map" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			public var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+		
+			public function reset():void {
+				acItems = new ArrayCollection([]);
+				cancel();
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				acItems = new ArrayCollection([]);
+				// Insert
+				var f:XML;
+				for each(f in value["configuration-changes"]["ftp-extension-map-changes"]["ftp-extension-insert"]) {
+					acItems.addItem(tagInsert.xmlToObject(f));
+				}
+				
+				// Remove
+				for each(f in value["configuration-changes"]["ftp-extension-map-changes"]["ftp-extension-remove"]) {
+					acItems.addItem(tagRemove.xmlToObject(f));
+				}
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				if(acItems.length > 0) {
+					str += '<ftp-extension-map-changes>';
+					
+					for(var i:String in acItems) {
+						var obj:Object = acItems[i];
+						switch(obj.data.stackType) {
+							case "insert" :
+								str += tagInsert.objectToString(obj);
+								break;
+							case "remove" :
+								str += tagRemove.objectToString(obj);
+								break;
+						}
+					}
+					str += "</ftp-extension-map-changes>";
+				}
+				return str;
+			}
+			
+			private function add(type:String):void {
+				var obj:Object = new Object();
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.getEmptyData();
+						break;
+					case "remove" :
+						obj = tagRemove.getEmptyData();
+						break;
+				}
+				show(obj, -1);
+			}
+			
+			private function save(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.data;
+						break;
+					case "remove" :
+						obj = tagRemove.data;
+						break;
+				}
+				
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				vsFTP.selectedIndex = 0;
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+			}
+			
+			private function cancel():void {
+				tagInsert.reset();
+				tagRemove.reset();
+				
+				vsFTP.selectedIndex = 0;
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				
+				switch(obj.data.stackType) {
+					case "insert" :
+						tagInsert.data = obj;
+						vsFTP.selectedIndex = 1;
+						break;
+					case "remove" :
+						tagRemove.data = obj;
+						vsFTP.selectedIndex = 2;
+						break;
+				}
+			}
+			
+			private function listLabel(obj:Object):String {
+				switch(obj.data.stackType) {
+					case "insert" :
+						return tagInsert.objectToString(obj);
+					case "remove" :
+						return tagRemove.objectToString(obj);
+					default :
+						return "";
+				}
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:FormHeading label="FTP Extension Map Changes" width="100%">
+		<mx:toolTip>Specifies a change to the FTPExtensionMap.txt file. This defines whether the file is downloaded or uploaded as an ASCII or binary file from Dreamweaver to an FTP server.</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:ViewStack id="vsFTP" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right" >
+				<mx:Button label="Insert FTP Extension" click="add('insert')" >
+					<mx:toolTip>Specifies a change to the FTPExtensionMap.txt file. This defines whether the file is downloaded or uploaded as an ASCII or binary file from Dreamweaver to an FTP server.</mx:toolTip>
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				<mx:Button label="Remove FTP Extension" click="add('remove')" >
+					<mx:toolTip>Indicates the extension that is removed from SourceFormat.txt in the Configuration folder.</mx:toolTip>
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:FTPExtensionInsert id="tagInsert" width="100%" height="100%" save="save('insert')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:FTPExtensionRemove id="tagRemove" width="100%" height="100%" save="save('remove')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

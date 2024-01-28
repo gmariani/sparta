@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	label="Update" 
+	width="400" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0" 
+	creationComplete="reset()">
+	
+	<fx:Script>
+		<![CDATA[
+			import mx.containers.Form;
+			import mx.controls.TextInput;
+			import mx.events.ValidationResultEvent;
+          	import mx.validators.*;
+			
+			public function reset():void {
+				txtURL.text = "";
+				//txtMethod.text = "";
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				if("@url" in value.update) txtURL.text = value.update.@url.toString();
+				//if("@method" in value.update) txtMethod.text = value.update.@method.toString();
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				if(txtURL.text.length > 0) {
+					str += '<update';
+					
+					// Attribute for version 5.0
+					if(txtURL.text.length > 0 && txtURL.text.indexOf("http://") == 0 || txtURL.text.indexOf("https://") == 0) {
+						str += ' url="' + txtURL.text + '"';
+					}
+					
+					// Optional attribute for version 5.0
+					if(txtMethod.text.length > 0) {
+						str += ' method="' + txtMethod.text + '"';
+					}
+					
+					str += ' />';
+				}
+				
+				return str;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:RegExpValidator id="regExpV" 
+	        source="{txtURL}" property="text" 
+	        flags="g" 
+	        expression="^http://|^https://" 
+	        required="false"
+	        noMatchError="The value must start with either “http://” or “https://”" />
+	</fx:Declarations>
+	
+	<mx:FormHeading label="Update" width="100%">
+		<mx:toolTip>This tag allows third-party developers to include an update link with the extension. When Extension Manager starts, it checks for an extension update. If an update available, Extension Manager notifies the user to update the extension.</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:FormItem label="URL (5.0)" width="100%" required="true">
+		<mx:toolTip>Indicates online link for extension update information file. The value must start with either “http://” or “https://”.</mx:toolTip>
+		<s:TextInput id="txtURL" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Method (5.0)" width="100%">
+		<mx:toolTip>Reserved for future use. Now it has to be ‘directlink’.</mx:toolTip>
+		<s:TextInput id="txtMethod" width="100%" enabled="false" text="directlink" />
+	</mx:FormItem>
+</mx:Form>

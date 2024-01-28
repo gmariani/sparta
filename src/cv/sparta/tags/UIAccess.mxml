@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:fx="http://ns.adobe.com/mxml/2009" 
+	xmlns:s="library://ns.adobe.com/flex/spark" 
+	xmlns:mx="library://ns.adobe.com/flex/mx"
+	width="400" 
+	label="UI Access" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0"
+	creationComplete="reset()">
+	
+	<fx:Script>
+		<![CDATA[
+			public function reset():void {
+				txtUIAccess.text = "";
+				txtUIAccess.errorString = "";
+				txtURL.text = "";
+				txtResID.text = "";
+				txtSource.text = "";
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				txtUIAccess.text = value["ui-access"].toString();
+				
+				if("@href" in value["ui-access"]) txtURL.text = value["ui-access"].@href.toString();
+				if("@resid" in value["ui-access"]) txtResID.text = value["ui-access"].@resid.toString();
+				if("@source" in value["ui-access"]) txtSource.text = value["ui-access"].@source.toString();
+			}
+			
+			/*
+			{resid}
+			
+			resid References string resource with value of “resid” in resource file and displays that string in
+			lower-right part of user interface.
+			*/
+			public function getXML():String {
+				var str:String = "";
+				if(txtUIAccess.text.length > 0) {
+					str += '<ui-access';
+					
+					// Optional attribute for version 2.x that degrades gracefully
+					if(txtURL.text.length > 0 && txtURL.text.indexOf("http://") == 0 || txtURL.text.indexOf("https://") == 0) {
+						str += ' href="' + txtURL.text + '"';
+					}
+					
+					// Optional attribute for version 2.1
+					if(txtResID.text.length > 0) str += ' resid="' + txtResID.text + '"';
+					
+					// Optional attribute for version 2.x that DOES NOT degrade gracefully.
+					if(txtSource.text.length > 0) str += ' source="' + txtSource.text + '"';
+					
+					str += ' ><\!\[CDATA\[';
+					str += txtUIAccess.text;
+					str += '\]\]></ui-access>';
+				}
+				
+				return str;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:StringValidator required="true" source="{txtUIAccess}" property="text" />
+		<mx:RegExpValidator id="regExpV" 
+	        source="{txtURL}" property="text" 
+	        flags="g" 
+	        expression="^http://|^https://" 
+	        required="false"
+	        noMatchError="The value must start with either “http://” or “https://”" />
+	</fx:Declarations>
+	
+	<mx:FormHeading label="UI Access" width="100%">
+		<mx:toolTip><![CDATA[Specifies the text that will appear in the Extension Manager window when the extension is selected. You should include information about where to find the item in the application’s user interface as well as a brief description of the item’s use.<br/><br/>Note: If the href or source attributes are specified, Extension Manager displays the HTML content specified by those attributes. If those attributes are unspecified, ui-access is appended to the contents of the description tag.]]></mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:FormItem label="UI Access" width="100%" height="100%" required="true">
+		<mx:toolTip><![CDATA[Specifies the text that will appear in the Extension Manager window when the extension is selected. You should include information about where to find the item in the product's user interface as well as a brief description of the item's use. This tag must contain a CDATA section. You can use br and &nbsp; to format the CDATA information. Has a limit of 512 characters.]]></mx:toolTip>
+		<s:TextArea id="txtUIAccess" maxChars="512" lineBreak="toFit" height="100%" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Res ID (2.1+)" width="100%">
+		<mx:toolTip>References string resource with value of “resid” in resource file and displays that string in lower-right part of user interface.</mx:toolTip>
+		<s:TextInput id="txtResID" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Source URL (2.x+)" width="100%">
+		<mx:toolTip>Indicates online URL that will be displayed as the description of the extension. The value must start with either “http://” or “https://”.</mx:toolTip>
+		<s:TextInput id="txtURL" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Source (2.x+)" width="100%">
+		<mx:toolTip>Indicates the relative path to the HTML file on the local computer, specified by the $ExtensionSpecificEMStore attribute.</mx:toolTip>
+		<s:TextInput id="txtSource" width="100%" />
+	</mx:FormItem>
+</mx:Form>

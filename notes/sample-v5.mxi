@@ -1,0 +1,100 @@
+<macromedia-extension name="extension name" version="1.30.0" mxiversion="1" xmanversion="2" icon="icon.png" type="browserprofile" requires-restart="true" ismultilingual="true" name_resid="name resid" plugin-manager-type="current-user" show-files="false" force-quit="true">
+  <defaultLanguage>en_US</defaultLanguage>
+  <author name="gabe" author_resid="resid"/>
+  <description href="http://source" resid="resid" source="source"><![CDATA[desc]]></description>
+  <update url="http://source" method="directlink"/>
+  <products>
+    <product name="Fireworks CS5" version="11" primary="true" required="true" maxversion="1" bit="64"/>
+  </products>
+  <license-agreement resid="resid"><![CDATA[license]]></license-agreement>
+  <ui-access href="http://source" resid="resid" source="source"><![CDATA[ui access]]></ui-access>
+  <files xml:lang="en_US" default-file-type="ordinary">
+    <file source="asdf.html" destination="$Dreamweaver" platform="win" shared="true" systemfile="true" win-extension=".html" isresourcefile="true" file-type="ordinary" minVersion="1" maxVersion="2"/>
+  </files>
+  <configuration-changes>
+    <toolpanel-changes>
+      <toolpanel-item-insert xml:lang="en_US" name="name"/>
+    </toolpanel-changes>
+    <ftp-extension-map-changes>
+      <ftp-extension-insert extension=".html" mac-creator="321" mac-file-type="123" type="Binary"/>
+      <ftp-extension-remove extension=".jsfl"/>
+    </ftp-extension-map-changes>
+    <insertbar-changes>
+      <insertbar-insert insertAfter="catid" xml:lang="ja_JP">
+        <category id="catid" folder="folder" showIf="_SERVERMODEL_ASP">
+          <separator showIf="_SERVERMODEL_ASPNET"/>
+          <button id="id" image="image.png" name="name" canDrag="true" showIf="_SERVERMODEL_ASP" enabled="_SERVERMODEL_ASPNET" command="script()" file="file.txt" tag="tag" codeOnly="true"/>
+          <checkbutton id="id" image="image.png" checked="_SERVERMODEL_ASP" showIf="_SERVERMODEL_ASPNET" enabled="_SERVERMODEL_JSP" command="script()" file="file.txt" tag="tag" name="name" codeOnly="true"/>
+          <menubutton id="id" image="image.png" showIf="_SERVERMODEL_ASPNET" name="name" folder="folder"/>
+        </category>
+      </insertbar-insert>
+      <insertbar-remove id="catid" xml:lang="nl_NL"/>
+      <insertbar-item-insert insertBefore="itemid" prependTo="catid" category="cat" xml:lang="ca_ES">
+        <menubutton id="id" image="image.png" showIf="_SERVERMODEL_ASPNET" name="name" folder="folder"/>
+      </insertbar-item-insert>
+      <insertbar-item-remove id="itemid" xml:lang="nb_NO"/>
+    </insertbar-changes>
+    <server-behavior-changes servermodelfolder="ASP.NET_VB">
+      <menu-insert insertAfter="menuid" xml:lang="ca_ES">
+        <comment><![CDATA[mycomment]]></comment>
+        <separator id="id"/>
+        <menuitem name="name" id="id" key="key" platform="win" file="file.txt" command="script()" enabled="script()" checked="script()" dynamic="true" arguments="args" resid:name="residname"/>
+        <menu name="name" id="id" platform="mac"/>
+      </menu-insert>
+      <menu-remove id="menuid" xml:lang="en_GB"/>
+    </server-behavior-changes>
+    <server-format-changes servermodelfolder="ASP_Js">
+      <menu-insert insertBefore="menuid" xml:lang="da_DK">
+        <separator id="asdf" platform="mac"/>
+      </menu-insert>
+    </server-format-changes>
+    <server-format-definition-changes servermodelfolder="ASP_Vbs">
+      <menu-insert appendTo="menuid" xml:lang="pt_BR">
+        <tag/>
+      </menu-insert>
+    </server-format-definition-changes>
+    <data-source-changes servermodelfolder="ColdFusion">
+      <menu-insert prependTo="menuid" xml:lang="ja_JP">
+        <menu name="name" id="id" platform="win"/>
+      </menu-insert>
+    </data-source-changes>
+    <shortcut-insert list_Id="listid" xml:lang="en_US">
+      <shortcut key="k" id="id" command="script()" file="file.txt"/>
+      <shortcutlist id="listid" platform="mac"/>
+    </shortcut-insert>
+    <shortcut-remove id="123" xml:lang="zh_TW"/>
+    <taglibrary-changes>
+      <taglibrary-insert xml:lang="da_DK">
+        <taglibrary name="name" doctypes="types" prefix="prefix" servermodel="model" id="id" tagchooser="chooser">
+          <tagref name="name" prefix="prefix" file="C:\Documents and Settings\gmariani\Desktop\Todo.txt"/>
+        </taglibrary>
+      </taglibrary-insert>
+      <taglibrary-remove id="6666" xml:lang="sv_SE"/>
+    </taglibrary-changes>
+    <toolbar-changes file="C:\Documents and Settings\gmariani\My Documents\My Dropbox\Private\Documents\Notepad.txt">
+      <toolbar-insert xml:lang="ja_JP">
+        <toolbar id="asdf" label="label" container="mainframe" relativeTo="relative">
+          <include file="C:\Documents and Settings\gmariani\Desktop\sample.xml"/>
+          <itemref id="itemid" showIf="script()"/>
+          <separator showIf="script()"/>
+          <button id="itemid" image="image.png" tooltip="tooltip" command="script()" showIf="script()" disabledImage="image.png" overImage="image.png" label="label" file="file.txt" domRequired="true" enabled="script()" update="onServerModelChange" arguments="arguments"/>
+          <checkbutton id="itemid" image="image.png" tooltip="tooltip" checked="script()" command="script()" showIf="script()" disabledImage="image.png" overImage="image.png" label="label" file="file.txt" domRequired="true" enabled="script()" update="asdf" arguments="fdsa"/>
+          <menubutton id="itemid" image="image.png" tooltip="tooltip" menuID="menuid" domRequired="true" enabled="script()" showIf="script()" disabledImage="image.png" overImage="image.png" label="label" file="image.png" update="onCodeViewSyncChange"/>
+          <combobox id="itemid" tooltip="tooltip" file="file.txt" enabled="script()" value="script()" command="script()" showIf="script()" label="label" width="100" domRequired="true" update="onViewChange" arguments="args"/>
+          <editcontrol id="itemid" tooltip="tooltip" file="file.txt" value="script()" command="script()" showIf="script()" label="label" width="120" domRequired="true" enabled="script()" update="onEveryIdle" arguments="args"/>
+          <colorpicker id="itemid" tooltip="tooltip" value="script()" command="script()" showIf="script()" image="image.png" disabledImage="image.png" overImage="image.png" label="asdf" colorRect="10 10 10 10" file="file.txt" domRequired="true" enabled="script()" update="onEveryIdle,onSelChange" arguments="args"/>
+        </toolbar>
+      </toolbar-insert>
+      <toolbar-remove id="sfdasdf" xml:lang="da_DK"/>
+      <toolbar-item-insert insertAfter="itemid" prependTo="toolbarid" toolbar="toolbar" xml:lang="ja_JP"/>
+      <toolbar-item-remove id="toolbar" xml:lang="zh_TW"/>
+    </toolbar-changes>
+    <extensions-changes>
+      <extension-insert extension=".ace" description="fdsa" xml:lang="nl_NL"/>
+      <extension-remove extension=".asdf" description="asdf" xml:lang="fi_FI"/>
+    </extensions-changes>
+  </configuration-changes>
+  <file-tokens>
+    <token name="name" prompt="prompt" default="def$Fireworks" definition="definition"/>
+  </file-tokens>
+</macromedia-extension>

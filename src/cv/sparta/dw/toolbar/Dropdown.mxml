@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" title="Dreamweaver Toolbar Drop-down" width="500">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtItemID.text = obj.data.id;
+				txtTooltip.text = obj.data.tooltip;
+				txtFile.text = obj.data.file;
+				txtEnabled.text = obj.data.enabled;
+				txtChecked.text = obj.data.checked;
+				txtValue.text = obj.data.value;
+				txtCommand.text = obj.data.command;
+				txtShowIf.text = obj.data.showIf;
+				txtLabel.text = obj.data.label;
+				txtWidth.text = obj.data.width;
+				cbDOM.selected = obj.data.domRequired;
+				txtUpdate.text = obj.data.update;
+				txtArguments.text = obj.data.arguments;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = txtItemID.text;
+				obj.data.tooltip = txtTooltip.text;
+				obj.data.file = txtFile.text;
+				obj.data.enabled = txtEnabled.text;
+				obj.data.checked = txtChecked.text;
+				obj.data.value = txtValue.text;
+				obj.data.command = txtCommand.text;
+				obj.data.showIf = txtShowIf.text;
+				obj.data.label = txtLabel.text;
+				obj.data.width = txtWidth.text;
+				obj.data.domRequired = cbDOM.selected;
+				obj.data.update = txtUpdate.text;
+				obj.data.arguments = txtArguments.text;
+				obj.data.tagType = "Dropdown";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.tooltip = "";
+				obj.data.file = "";
+				obj.data.enabled = "";
+				obj.data.checked = "";
+				obj.data.value = "";
+				obj.data.command = "";
+				obj.data.showIf = "";
+				obj.data.label = "";
+				obj.data.width = "";
+				obj.data.domRequired = false;
+				obj.data.update = "";
+				obj.data.arguments = "";
+				obj.data.tagType = "Dropdown";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id  = f.@id.toString();
+				
+				obj.data.tooltip = "";
+				if("@tooltip" in f) obj.data.tooltip = f.@tooltip.toString();
+				
+				obj.data.file = "";
+				if("@file" in f) obj.data.file = f.@file.toString();
+				
+				obj.data.enabled = "";
+				if("@enabled" in f) obj.data.enabled = f.@enabled.toString();
+				
+				obj.data.checked = "";
+				if("@checked" in f) obj.data.checked = f.@checked.toString();
+				
+				obj.data.value = "";
+				if("@value" in f) obj.data.value = f.@value.toString();
+				
+				obj.data.command = "";
+				if("@command" in f) obj.data.command = f.@command.toString();
+				
+				// Optional //
+				obj.data.showIf = "";
+				if("@showIf" in f) obj.data.showIf = f.@showIf.toString();
+				
+				obj.data.label = "";
+				if("@label" in f) obj.data.label = f.@label.toString();
+				
+				obj.data.width = "";
+				if("@width" in f) obj.data.width = f.@width.toString();
+				
+				obj.data.domRequired = false;
+				if("@domRequired" in f && f.@domRequired == "true") obj.data.domRequired = true;
+				
+				obj.data.update = "";
+				if("@update" in f) obj.data.update = f.@update.toString();
+				
+				obj.data.arguments = "";
+				if("@arguments" in f) obj.data.arguments = f.@arguments.toString();
+				
+				obj.data.tagType = "Dropdown";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<dropdown';
+				str += ' id="' + obj.data.id + '"';
+				str += ' tooltip="' + obj.data.tooltip + '"';
+				str += ' file="' + obj.data.file + '"';
+				str += ' enabled="' + obj.data.enabled + '"';
+				str += ' checked="' + obj.data.checked + '"';
+				str += ' value="' + obj.data.value + '"';
+				str += ' command="' + obj.data.command + '"';
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				if(obj.data.label.length > 0) str += ' label="' + obj.data.label + '"';
+				if(obj.data.width) str += ' width="' + obj.data.width + '"';
+				if(obj.data.domRequired) str += ' domRequired="' + obj.data.domRequired + '"';
+				if(obj.data.update.length > 0) str += ' update="' + obj.data.update + '"';
+				if(obj.data.arguments.length > 0) str += ' arguments="' + obj.data.arguments + '"';
+				str += ' />';
+				return str;
+			}
+			
+			public function reset():void {
+				txtItemID.text = "";
+				txtTooltip.text = "";
+				txtFile.text = "";
+				txtEnabled.text = "";
+				txtChecked.text = "";
+				txtValue.text = "";
+				txtCommand.text = "";
+				txtShowIf.text = "";
+				txtLabel.text = "";
+				txtWidth.text = "";
+				cbDOM.selected = false;
+				txtUpdate.text = "";
+				txtArguments.text = "";
+			}
+			
+			protected function validateForm():void {
+            	var validatorArr:Array = [valItemID, valTooltip, valFile, valEnabled, valChecked, valValue, valCommand];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Drop-down...", Alert.OK);
+                }
+            }
+            
+            protected function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            protected function onClickBrowse(target:String):void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			protected function onFileSelection(event:Event):void {
+				var f:File = flash.filesystem.File(event.target);
+				f.removeEventListener(Event.SELECT, onFileSelection);
+				txtFile.text = f.nativePath;
+			}
+			
+			private function appendUpdate(event:Event):void {
+				txtUpdate.text += ddUpdate.selectedItem.data;
+			}
+			
+			private function dataTip(value:Object):String {
+				return value.tip;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valItemID" required="true" source="{txtItemID}" property="text" />
+	<mx:StringValidator id="valTooltip" required="true" source="{txtTooltip}" property="text" />
+	<mx:StringValidator id="valFile" required="true" source="{txtFile}" property="text" />
+	<mx:StringValidator id="valEnabled" required="true" source="{txtEnabled}" property="text" />
+	<mx:StringValidator id="valChecked" required="true" source="{txtChecked}" property="text" />
+	<mx:StringValidator id="valValue" required="true" source="{txtValue}" property="text" />
+	<mx:StringValidator id="valCommand" required="true" source="{txtCommand}" property="text" />
+
+	<mx:Form id="form" width="100%" height="100%">
+
+		<mx:FormItem label="Item ID" width="100%" required="true" >
+			<mx:toolTip>The id attribute is an identifier for the toolbar item. The id attribute must be unique within the current file and all files that are included within the current file. The itemref tag uses the item id to indicate and include an item within a toolbar.</mx:toolTip>
+			<mx:TextInput id="txtItemID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Tooltip" width="100%" required="true" >
+			<mx:toolTip>This attribute specifies the identifying text, or tool tip, that appears when the mouse pointer hovers over the toolbar item.</mx:toolTip>
+			<mx:TextInput id="txtTooltip" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="File" width="100%" height="100%" required="true" >
+			<mx:toolTip>The file attribute is optional for other types of items. The file attribute specifies the path, relative to the Configuration folder, of a command file that contains JavaScript functions to populate, update, and execute the item. The file attribute overrides the enabled, checked, value, update, domRequired, menuID, showIf, and command attributes. In general, if you specify a command file with the file attribute, Dreamweaver ignores all the equivalent attributes that are specified in the tag.</mx:toolTip>
+			<mx:HBox width="100%">
+				<mx:TextInput id="txtFile" width="100%" />
+				<mx:Button label="Browse" click="onClickBrowse('file')"/>
+			</mx:HBox>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Enabled (Script)" width="100%" required="true" >
+			<mx:toolTip>As with menus, the script returns a value that specifies whether the item is enabled. If you do not specify this attribute, it defaults to enabled. The enabled attribute is equivalent to the canAcceptCommand() function in a toolbar command file.</mx:toolTip>
+			<mx:TextInput id="txtEnabled" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Checked (Script)" width="100%" required="true" >
+			<mx:toolTip>Dreamweaver ignores the checked attribute for other types of items. As with menus, the script returns a value that specifies whether the item is checked or unchecked. The checked attribute is equivalent to isCommandChecked() in a toolbar command file. If you do not specify this attribute, it defaults to unchecked.</mx:toolTip>
+			<mx:TextInput id="txtChecked" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Value (Script)" width="100%" required="true" >
+			<mx:toolTip>To determine what value to display for pop-up menus and combo boxes, Dreamweaver first calls isCommandchecked() for each item in the menu. If the isCommandchecked() function returns a true value for any items, Dreamweaver displays the value for the first one. If no items return a true value or the isCommandChecked() function is not defined, Dreamweaver calls the getCurrentValue() function or executes the script that the value attribute specifies. If the control is a combo box, Dreamweaver displays the returned value. If the control is a pop-up menu, Dreamweaver temporarily adds the returned value to the list and displays it. In all other cases, the script returns the current value to display. For pop-up menus or combo boxes, this value should be one of the items in the menu list. For combo boxes and text boxes, the value can be any string that the script returns. For color pickers, the value should be a valid color but Dreamweaver does not enforce this. The value attribute is equivalent to the getCurrentValue() function in a toolbar command file.</mx:toolTip>
+			<mx:TextInput id="txtValue" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Command (Script)" width="100%" required="true" >
+			<mx:toolTip><![CDATA[This attribute is required for all items except menu buttons. Dreamweaver ignores the command attribute for menu buttons. Specifies the JavaScript function to execute when the user performs one of the following actions:<br/>• Clicks a button<br/>• Selects an item from a pop-up menu or combo box<br/>• Tabs out of, presses Return in, or clicks away from a text box or combo box<br/>• Selects a color from a color picker<br/>The command attribute is equivalent to the receiveArguments() function in a toolbar command file.]]></mx:toolTip>
+			<mx:TextInput id="txtCommand" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Show If (Script)" width="100%" >
+			<mx:toolTip>The showif attribute specifies that the separator should appear only on the toolbar if the given script returns true. For example, you can use the showIf attribute to show the separator only in a given application or only when the page has a certain document type. If the showIf attribute is unspecified, the separator always appears.</mx:toolTip>
+			<mx:TextInput id="txtShowIf" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Label" width="100%" >
+			<mx:toolTip>This attribute specifies a label that displays next to the item. Dreamweaver does not automatically add a colon to labels. Labels for nonbutton items are always positioned on the left of the item. Dreamweaver places labels for buttons, check buttons, radio buttons, menu buttons, and combo buttons inside the button and to the right of the icon.</mx:toolTip>
+			<mx:TextInput id="txtLabel" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Width" width="100%" >
+			<mx:toolTip>This attribute applies only to text box, pop-up menu, and combo box items by specifying the width of the item in pixels. If you do not specify the width attribute, Dreamweaver uses a reasonable default width.</mx:toolTip>
+			<mx:TextInput id="txtWidth" restrict="0123456789" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="DOM Required?" width="100%" >
+			<mx:toolTip>As with menus, the domRequired attribute specifies whether the Design view should be synchronized with the Code view before Dreamweaver runs the associated command. If you do not specify this attribute, it defaults to a true value. This attribute is equivalent to the isDOMRequired() function in a toolbar command file.</mx:toolTip>
+			<mx:CheckBox id="cbDOM" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Update" width="100%" >
+			<mx:toolTip><![CDATA[This attribute specifies how often the enabled, checked, showif, and value handlers should run to update the visible state of the item. The update attribute is equivalent to the getUpdateFrequency() function in a toolbar command file. You must specify the update frequency for toolbar items because these items are always visible, unlike menu items. For this reason, you should always select the lowest frequency possible and make sure your handlers for the enabled, checked, and value handlers are as simple as possible.<br/>The following list shows the possible handlers for update_frequency_list, from least to most frequent. If you do not specify the update attribute, the update frequency defaults to onEdit frequency. You can specify multiple update frequencies, separated by commas. The handlers run on any of the following specified events:<br/>• onServerModelChange executes when the server model of the current page changes.<br/>• onCodeViewSyncChange executes when the Code view becomes in or out of sync with the Design view.<br/>• onViewChange executes whenever the user switches focus between Code view and Design view or when the user changes between Code view, Design view, or Code and Design view.<br/>• onEdit executes whenever the document is edited in Design view. Changes that you make in Code view do not trigger this event.<br/>• onSelChange executes whenever the selection changes in Design view. Changes that you make in Code view do not trigger this event.<br/>• onEveryIdle executes regularly when the application is idle. This can be time-consuming because the enabler/checked/showif/value handlers are running often. It should be used only for buttons that need to have their enable state changed at special times, and handlers should be quick.<br/>Note: In all these cases, Dreamweaver actually executes the handlers after the specified event occurs, when the application is in a quiescent state. It is not guaranteed that your handlers run after every edit or selection change; your handlers run soon after a batch of edits or selection changes occur. The handlers are guaranteed to run when the user clicks on a toolbar item.]]></mx:toolTip>
+			<mx:TextInput id="txtUpdate" width="100%" />
+			<mx:List id="ddUpdate" variableRowHeight="true" wordWrap="true" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendUpdate(event)" showDataTips="true">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="onServerModelChange" label="onServerModelChange" tip="onServerModelChange executes when the server model of the current page changes." />
+		                <mx:Object data="onCodeViewSyncChange" label="onCodeViewSyncChange" tip="onCodeViewSyncChange executes when the Code view becomes in or out of sync with the Design view." />
+		                <mx:Object data="onViewChange" label="onViewChange" tip="onViewChange executes whenever the user switches focus between Code view and Design view or when the user changes between Code view, Design view, or Code and Design view." />
+		                <mx:Object data="onEdit" label="onEdit" tip="onEdit executes whenever the document is edited in Design view. Changes that you make in Code view do not trigger this event." />
+		                <mx:Object data="onSelChange" label="onSelChange" tip="onSelChange executes whenever the selection changes in Design view. Changes that you make in Code view do not trigger this event." />
+		                <mx:Object data="onEveryIdle" label="onEveryIdle" tip="onEveryIdle executes regularly when the application is idle. This can be time-consuming because the enabler/checked/showif/value handlers are running often. It should be used only for buttons that need to have their enable state changed at special times, and handlers should be quick." />
+		            </mx:Array>
+				</mx:dataProvider>
+			</mx:List>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Arguments" width="100%" >
+			<mx:toolTip>This attribute specifies the comma-separated list of arguments to pass to the receiveArguments() function in a toolbar command file. If you do not specify the arguments attribute, Dreamweaver passes the ID of the toolbar item. In addition, pop-up menus, combo boxes, text boxes, and color pickers pass their current value as the first argument, before any arguments that the arguments attribute specifies, and before the item ID if no arguments are specified.</mx:toolTip>
+			<mx:TextInput id="txtArguments" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

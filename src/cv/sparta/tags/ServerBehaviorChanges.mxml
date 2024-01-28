@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" 
+	label="{_label}" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			private var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+			
+			[Bindable]
+			private var _tagType:int = 0;
+			
+			private var tagName:String;
+			
+			[Bindable]
+			private var _label:String;
+			
+			[Bindable]
+			private var _tooltip:String;
+			
+			private var tagTypes:Array = [
+				{ tag:"server-behavior-changes", label:"Server Behavior", toolTip:"Container tag for changes to menus in the ServerBehaviors.xml file in any of the Dreamweaver MX Configuration/ServerBehaviors/servermodel folders."},
+				{ tag:"server-format-changes", label:"Server Format", toolTip:"Container tag for changes to menus in the Formats.xml file in any of the Dreamweaver MX Configuration/ServerFormats/servermodel folders."},
+				{ tag:"server-format-definition-changes", label:"Server Format Definition", toolTip:"Container tag for changes to menus in the ServerFormats.xml file in any of the Dreamweaver MX Configuration/ServerFormats/servermodel folders."},
+				{ tag:"data-source-changes", label:"Data Source", toolTip:"Container tag for changes to menus in the DataSources.xml file in any of the Dreamweaver MX Configuration/DataSources/servermodel folders."}
+			];
+			
+			public function get tagType():int {
+				return _tagType;
+			}
+			
+			public function set tagType(value:int):void {
+				if(value < 0) value = 0;
+				if(value > tagTypes.length - 1) value = tagTypes.length - 1;
+				_tagType = value;
+				
+				tagName = tagTypes[_tagType].tag;
+				_label = tagTypes[_tagType].label;
+				_tooltip = tagTypes[_tagType].toolTip;
+			}
+			
+			public function set languages(data:ArrayCollection):void {
+				tagInsert.acLanguages = data;
+				tagRemove.acLanguages = data;
+			}
+			
+			public function get languages():ArrayCollection {
+				return tagInsert.acLanguages;
+			}
+		
+			public function reset():void {
+				ddServerModel.selectedIndex = 0;
+				acItems = new ArrayCollection([]);
+				cancel();
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				if(value["configuration-changes"][tagName]["@servermodelfolder"] && value["configuration-changes"][tagName]["@servermodelfolder"].toString().length > 0) {
+					var type:String = value["configuration-changes"][tagName]["@servermodelfolder"].toString();
+					for(var i:String in ddServerModel.dataProvider) {
+						if(ddServerModel.dataProvider[i].data == type) {
+							ddServerModel.selectedItem = ddServerModel.dataProvider[i];
+							break;
+						}
+					}
+				}
+				
+				acItems = new ArrayCollection([]);
+				// Insert
+				var f:XML;
+				var obj:Object;
+				for each(f in value["configuration-changes"][tagName]["menu-insert"]) {
+					obj = tagInsert.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Remove
+				for each(f in value["configuration-changes"][tagName]["menu-remove"]) {
+					obj = tagRemove.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				
+				if(acItems.length > 0) {
+					str += '<' + tagName + ' servermodelfolder="' + ddServerModel.selectedItem.data + '" >';
+					
+					for(var i:String in acItems) {
+						var obj:Object = acItems[i];
+						switch(obj.data.stackType) {
+							case "insert" :
+								str += tagInsert.objectToString(obj);
+								break;
+							case "remove" :
+								str += tagRemove.objectToString(obj);
+								break;
+						}
+					}
+					str += "</" + tagName + ">";
+				}
+				
+				return str;
+			}
+			
+			private function add(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.getEmptyData();
+						break;
+					case "remove" :
+						obj = tagRemove.getEmptyData();
+						break;
+				}
+				show(obj, -1);
+			}
+			
+			private function save(type:String):void {
+				var obj:Object;
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.data;
+						break;
+					case "remove" :
+						obj = tagRemove.data;
+						break;
+				}
+				
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				vs.selectedIndex = 0;
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+			}
+			
+			private function cancel():void {
+				tagInsert.reset();
+				tagRemove.reset();
+				vs.selectedIndex = 0;
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				
+				switch(obj.data.stackType) {
+					case "insert" :
+						tagInsert.data = obj;
+						vs.selectedIndex = 1;
+						break;
+					case "remove" :
+						tagRemove.data = obj;
+						vs.selectedIndex = 2;
+						break;
+				}
+			}
+			
+			private function listLabel(obj:Object):String {
+				switch(obj.data.stackType) {
+					case "insert" :
+						return tagInsert.objectToString(obj);
+					case "remove" :
+						return tagRemove.objectToString(obj);
+					default :
+						return "";
+				}
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" horizontalAlign="left">
+		<mx:FormHeading toolTip="{_tooltip}" label="{_label}" width="100%" />
+		<mx:Spacer width="100%" />
+		<mx:Label text="Server Model Folder" enabled="false" paddingTop="2"/>
+		<mx:ComboBox id="ddServerModel" toolTip="The name of the server model folder in which the changes are to be made.">
+			<mx:dataProvider>
+				<mx:Array>
+	                <mx:Object data="ASP.NET_Csharp" label="ASP.NET C#" />
+	                <mx:Object data="ASP.NET_VB" label="ASP.NET VB" />
+	                <mx:Object data="ASP_Js" label="ASP JS" />
+	                <mx:Object data="ASP_Vbs" label="ASP VBS" />
+	                <mx:Object data="ColdFusion" label="ColdFusion" />
+	                <mx:Object data="UD4-ColdFusion" label="UltraDev4 - ColdFusion" />
+	                <mx:Object data="PHP_MySQL" label="PHP MySQL" />
+	                <mx:Object data="JSP" label="JSP" />
+	            </mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:HBox>
+	
+	<mx:ViewStack id="vs" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button label="Insert Menu" click="add('insert')"  toolTip="Specifies where in the product’s menus to insert a menu bar, menu, menu item, or format during installation of this extension." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				<mx:Button label="Remove Menu" click="add('remove')"  toolTip="Provides information about a menu bar, menu, menu item, or format to remove during installation of this extension." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:MenuInsert id="tagInsert" width="100%" height="100%" tagType="{_tagType}" save="save('insert')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:MenuRemove id="tagRemove" width="100%" height="100%" save="save('remove')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

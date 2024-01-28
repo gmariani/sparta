@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var acLanguages:ArrayCollection;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtExt.text = obj.data.extension;
+				txtDesc.text = obj.data.description;
+				for(var i:String in ddLanguage.dataProvider) {
+					if(ddLanguage.dataProvider[i].data == obj.data.language) {
+						ddLanguage.selectedItem = ddLanguage.dataProvider[i];
+						break;
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.extension = txtExt.text;
+				obj.data.description = txtDesc.text;
+				obj.data.language = ddLanguage.selectedItem.data;
+				obj.data.stackType = "insert";
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.extension = "";
+				obj.data.description = "";
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				obj.data.stackType = "insert";
+				return obj;
+			}
+			
+			public function xmlToObject(f:XML):Object {
+				var xmlNS:Namespace = new Namespace("http://www.w3.org/XML/1998/namespace");
+				var obj:Object = new Object();
+				obj.data = new Object();
+
+				obj.data.extension = "";
+				if("@extension" in f) obj.data.extension = f.@extension.toString();
+				
+				obj.data.description = "";
+				if("@description" in f) obj.data.description = f.@description.toString();
+				
+				obj.data.language = ddLanguage.dataProvider[0].data;
+				if(f.@xmlNS::lang && f.@xmlNS::lang.toString().length > 0) {
+					obj.data.language = f.@xmlNS::lang.toString();
+				}
+				
+				obj.data.stackType = "insert";
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<extension-insert";
+				str += ' extension="' + obj.data.extension + '"';
+				str += ' description="' + obj.data.description + '"';
+				str += ' xml:lang="' + obj.data.language + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtExt.text = "";
+				txtExt.errorString = "";
+				txtDesc.text = "";
+				txtDesc.errorString = "";
+				ddLanguage.selectedIndex = 0;
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valExt, valDesc];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Extension...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valExt" required="true" source="{txtExt}" property="text" minLength="2" />
+	<mx:StringValidator id="valDesc" required="true" source="{txtDesc}" property="text" minLength="2" />
+	
+	<mx:FormHeading label="Insert Extension" width="100%" textAlign="center"/>
+	
+	<mx:FormItem label="Extension" width="100%" required="true">
+		<mx:toolTip>Specifies name of the extension, such as .gif or .htm.</mx:toolTip>
+		<mx:TextInput id="txtExt" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Description" width="100%" required="true" toolTip="Describes what the extension is used for.">
+		<mx:TextInput id="txtDesc" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Language" width="100%">
+		<mx:toolTip>Specifies the language for the listed file. Extension Manager compares this language with the user language. If the languages match, configuration changes are applied; if not, they are ignored. If Extension Manager can't determine the user language, it applies all configuration changes regardless of their specified language.</mx:toolTip>
+		<mx:ComboBox id="ddLanguage" dataProvider="{acLanguages}"/>
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<application xmlns="http://ns.adobe.com/air/application/3.1">
+	<id>com.coursevector.sparta</id>
+	<versionLabel>2.1.0</versionLabel>
+	<versionNumber>2.1.0</versionNumber>
+	<filename>sparta</filename>
+	<name>Course Vector .sparta</name>
+	
+	<publisherID>4B7C391846352DEBEB1247C875B4670B2F776CD0.1</publisherID>
+	
+	<description>Creates and edits MXI extension files for Dreamweaver, Fireworks, Flash, and others.</description>
+	
+	<copyright>Copyright (c) 2014 Course Vector</copyright>
+	
+	<initialWindow>
+		<content>Sparta.swf</content>
+		<title>.sparta</title>
+	</initialWindow>
+	
+	<icon>
+		<image16x16>assets/icons/plus_16.png</image16x16>
+		<image32x32>assets/icons/plus_32.png</image32x32>  
+		<image48x48>assets/icons/plus_48.png</image48x48> 
+		<image128x128>assets/icons/plus_128.png</image128x128>
+	</icon>
+	
+	<customUpdateUI>false</customUpdateUI>
+	<allowBrowserInvocation>false</allowBrowserInvocation>
+	<installFolder>Course Vector</installFolder>
+	<programMenuFolder>Course Vector</programMenuFolder>
+</application>

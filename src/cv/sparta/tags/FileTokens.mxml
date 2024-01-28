@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" 
+	label="File Tokens" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0"
+	creationComplete="reset()">
+	
+	<mx:Metadata>
+		[Event(name="tokenUpdate", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ValidationResultEvent;
+			import cv.sparta.tags.Token;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			public var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+			
+			public function set defaultTokens(data:ArrayCollection):void {
+				tagToken.defaultTokens = data;
+			}
+			
+			public function get defaultTokens():ArrayCollection {
+				return tagToken.defaultTokens;
+			}
+		
+			public function reset():void {
+				acItems = new ArrayCollection([]);
+				cancel();
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				acItems = new ArrayCollection([]);
+				for each(var t:XML in value["file-tokens"].token) {
+					acItems.addItem(tagToken.xmlToObject(t));
+					dispatchEvent(new Event("tokenUpdate"));
+				}
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				if(acItems.length > 0) {
+					str += '<file-tokens>';
+					for(var i:String in acItems) {
+						str += tagToken.objectToString(acItems[i]);
+					}
+					str += "</file-tokens>";
+				}
+				return str;
+			}
+		
+			private function add():void {
+				show(tagToken.getEmptyData(), -1);
+			}
+			
+			private function save():void {
+				var obj:Object = tagToken.data;
+				
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				cancel();
+				dispatchEvent(new Event("tokenUpdate"));
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				
+				tagToken.data = obj;
+				vsTokens.selectedIndex = 1;
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+				dispatchEvent(new Event("tokenUpdate"));
+			}
+			
+			private function cancel():void {
+				tagToken.reset();
+				vsTokens.selectedIndex = 0;
+			}
+			
+			private function listLabel(obj:Object):String {
+				return tagToken.objectToString(obj);
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:FormHeading label="File Tokens" width="100%">
+		<mx:toolTip>Container tag that indicates any custom tokens.</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:ViewStack id="vsTokens" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right">
+				<mx:Button label="Add Token"  click="add()" toolTip="Defines a custom token for an extension. Custom tokens let you specify the destination folder of one or more files from an extension during installation, or provide a dialog box for the user to choose a destination folder" >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:Token id="tagToken" width="100%" height="100%" save="save()" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

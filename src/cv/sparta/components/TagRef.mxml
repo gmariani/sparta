@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"	width="500" >
+	
+	<mx:Metadata>
+		[Event(name="change", type="mx.events.ListEvent")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ListEvent;
+			import mx.core.IFlexDisplayObject;
+			import mx.containers.TitleWindow;
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.PopUpManagerChildList;
+			import cv.sparta.tags.ToolbarChanges;
+			import cv.sparta.dw.taglibrary.*;
+			import mx.core.UIComponent;
+		
+			[Bindable]
+			public var acChildItems:ArrayCollection = new ArrayCollection([]);
+			
+			public function get length():int {
+				return listChildItems.dataProvider.length;
+			}
+			
+			private var currentChildIndex:int = -1;
+			
+			public static function xmlToArray(value:XML):Array {
+				var arr:Array = [];
+				for each(var f:XML in value.children()) {
+					var obj:Object = setChildObject(f);
+					arr.push(obj);
+				}
+				return arr;
+			}
+			
+			override public function set data(value:Object):void {
+				if(value is Array) {
+					reset();
+					
+					for each(var o:Object in value) {
+						acChildItems.addItem(o);
+					}
+				}
+			}
+			
+			override public function get data():Object {
+				var arr:Array = [];
+				for each(var obj:Object in acChildItems) {
+					arr.push(obj);
+				}
+				return arr;
+			}
+			
+			public static function arrayToString(arr:Array):String {
+				var str:String = "";
+				for(var i:String in arr) {
+					str += getChildString(arr[i]);
+				}
+				return str;
+			}
+			
+			public function reset():void {
+				this.errorString = "";
+				acChildItems = new ArrayCollection([]);
+				listChildItems.selectedItem = null;
+			}
+			
+			private function addChildTag():void {
+				var obj:Object = cv.sparta.dw.taglibrary.TagRef.getEmptyData();
+				
+				showChildTag(obj, -1);
+			}
+            
+            private function removeChildTag():void {
+    			acChildItems.removeItemAt(currentChildIndex);
+				currentChildIndex = -1;
+				listChildItems.selectedIndex = currentChildIndex;
+			}
+			
+			private function showChildTag(obj:Object, index:int):void {
+				currentChildIndex = index;
+				
+				var tag:Class = getDefinitionByName("cv.sparta.dw.taglibrary." + obj.data.tagType) as Class;
+				var popup:Object = PopUpManager.createPopUp(UIComponent(this.parentApplication), tag, true, PopUpManagerChildList.APPLICATION);
+				popup.data = obj;
+				TitleWindow(popup).setStyle("horizontalAlign", "left");
+				popup.addEventListener('SAVE', saveChildTag, false, 0, true);
+				PopUpManager.centerPopUp(popup as IFlexDisplayObject);
+			}
+			
+			private function saveChildTag(e:Event):void {
+				var popup:Object = e.currentTarget;
+				var obj:Object = popup.data;
+				
+				if(currentChildIndex < 0) {
+					acChildItems.addItem(obj);
+					listChildItems.selectedItem = obj;
+				} else {
+					acChildItems.setItemAt(obj, currentChildIndex);
+					listChildItems.selectedIndex = currentChildIndex;
+				}
+			}
+			
+			private static function getChildString(obj:Object):String {
+				var tag:Class = getDefinitionByName("cv.sparta.dw.taglibrary." + obj.data.tagType) as Class;
+				var method:Function = tag["objectToString"];
+				return method(obj);
+			}
+			
+			private static function setChildObject(xml:XML):Object {
+				var obj:Object;
+				switch(String(xml.localName()).toLowerCase()) {
+					case "tagref" : obj = cv.sparta.dw.taglibrary.TagRef.xmlToObject(xml); break;
+					default : obj = {};
+				}
+				
+				return obj;
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listChildItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listChildItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listChildItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listChildItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					showChildTag(listChildItems.selectedItem, listChildItems.selectedIndex);
+				} else {
+					removeChildTag();
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:HBox>
+		<mx:Button label="Add Tag Reference" click="addChildTag()" >
+			<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+		</mx:Button>
+	</mx:HBox>
+	
+	<mx:List 
+		editable="true" 
+		itemEditor="cv.sparta.editor.ChildEditor"
+		editorYOffset="23"
+		editorDataField="data" editorHeightOffset="7"
+		itemEditEnd="destroyListEditor(event)" 
+		itemFocusIn="initListEditor(event)"
+		id="listChildItems" change="dispatchEvent(event.clone())" wordWrap="true" variableRowHeight="true" labelFunction="getChildString" width="100%" height="100%" dataProvider="{acChildItems}" />
+</mx:VBox>

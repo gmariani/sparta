@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="300">
+	
+	<mx:Metadata>
+		[Event(name="save", type="flash.events.Event")]
+		[Event(name="cancel", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ValidationResultEvent;
+			import mx.collections.ArrayCollection;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			[Bindable]
+			public var defaultTokens:ArrayCollection;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtName.text = obj.data.name;
+				txtPrompt.text = obj.data.prompt;
+				txtDefault.text = obj.data.default;
+				txtDefinition.text = obj.data.definition;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = txtName.text;
+				obj.data.prompt = txtPrompt.text;
+				obj.data.default = txtDefault.text;
+				obj.data.definition = txtDefinition.text;
+				return obj;
+			}
+			
+			public function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = "";
+				obj.data.prompt = "";
+				obj.data.default = "";
+				obj.data.definition = "";
+				return obj;
+			}
+			
+			public function xmlToObject(t:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.name = "";
+				if("@name" in t && t.@name.toString().length > 0) {
+					obj.data.name = t.@name;
+				}
+				
+				obj.data.prompt = "";
+				if("@prompt" in t) obj.data.prompt = t.@prompt.toString();
+				
+				obj.data.default = "";
+				if("@default" in t) obj.data.default = t.@default.toString();
+				
+				obj.data.definition = "";
+				if("@definition" in t) obj.data.definition = t.@definition.toString();
+				
+				return obj;
+			}
+			
+			public function objectToString(obj:Object):String {
+				var str:String = "<token";
+				str += ' name="' + obj.data.name + '"';
+				if(obj.data.prompt.length > 0) str += ' prompt="' + obj.data.prompt + '"';
+				if(obj.data.default.length > 0) str += ' default="' + obj.data.default + '"';
+				if(obj.data.definition.length > 0) str += ' definition="' + obj.data.definition + '"';
+				str += "/>";
+				return str;
+			}
+			
+			public function reset():void {
+				txtName.text = "";
+				txtName.errorString = "";
+				txtPrompt.text = "";
+				txtDefault.text = "";
+				txtDefinition.text = "";
+			}
+			
+			private function appendTokenToken(event:Event):void {
+				txtDefault.text += event.currentTarget.selectedItem.data;
+			}
+			
+			private function dataTip(value:Object):String {
+				return value.data;
+			}
+            
+            private function validateForm():void {
+            	var validatorArr:Array = [valName];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('save'));
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String = FormItem(err.currentTarget.source.parent).label;
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Token...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	dispatchEvent(new Event('cancel'));
+            }
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valName" required="true" source="{txtName}" property="text" minLength="2" />
+
+	<mx:FormItem label="Token Name" width="100%" required="true">
+		<mx:toolTip>The name of your custom token. This must be a unique name. Do not include the dollar sign ($) in the name.</mx:toolTip>
+		<mx:TextInput id="txtName" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Prompt" width="100%">
+		<mx:toolTip>Describes the kind of file to be installed in a folder. When you include this attribute, the user is prompted to specify a destination, and the value you provide is added to the dialog box’s title. For example, if the attribute is prompt=&quot;Sample Files&quot;, the dialog box displays “Select Folder for Sample Files”.</mx:toolTip>
+		<mx:TextInput id="txtPrompt" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Default" width="100%">
+		<mx:toolTip>Defines the default folder path if the prompt attribute is used. If you do not define the default attribute, the path box is blank. You can use a token in this attribute, such as default =&quot;$Dreamweaver&quot;.</mx:toolTip>
+		<mx:TextInput id="txtDefault" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Default Tokens" width="100%">
+		<mx:List variableRowHeight="true" wordWrap="true" dataProvider="{defaultTokens}" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendTokenToken(event)" showDataTips="true"/>
+	</mx:FormItem>
+	
+	<mx:FormItem label="Definition" width="100%">
+		<mx:toolTip>Defines the file path of the token when you do not use the prompt attribute. This prevents the Select Folder dialog box from appearing, so that the user cannot choose a destination path.</mx:toolTip>
+		<mx:TextInput id="txtDefinition" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem>
+		<mx:HBox>
+			<mx:Button label="Ok" click="validateForm()"/>
+			<mx:Button label="Cancel" click="resetForm()"/>
+		</mx:HBox>
+	</mx:FormItem>
+</mx:Form>

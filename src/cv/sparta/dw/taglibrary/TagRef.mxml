@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	width="500" 
+	title="Dreamweaver Tag Reference" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtName.text = obj.data.name;
+				txtPrefix.text = obj.data.prefix;
+				txtFile.text = obj.data.file;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = txtName.text;
+				obj.data.prefix = txtPrefix.text;
+				obj.data.file = txtFile.text;
+				obj.data.tagType = "TagRef";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.name = "";
+				obj.data.prefix = "";
+				obj.data.file = "";
+				obj.data.tagType = "TagRef";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.name = "";
+				if("@name" in f) obj.data.name  = f.@name.toString();
+				
+				// Optional //
+				obj.data.prefix = "";
+				if("@prefix" in f) obj.data.prefix = f.@prefix.toString();
+				
+				obj.data.file = "";
+				if("@file" in f) obj.data.file = f.@file.toString();
+				
+				obj.data.tagType = "TagRef";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<tagref';
+				str += ' name="' + obj.data.name + '"';
+				if(obj.data.prefix.length > 0) str += ' prefix="' + obj.data.prefix + '"';
+				if(obj.data.file.length > 0) str += ' file="' + obj.data.file + '"';
+				str += ' />';
+				return str;
+			}
+			
+			public function reset():void {
+				txtName.text = "";
+				txtPrefix.text = "";
+				txtFile.text = "";
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valName];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Tag Reference...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            private function onClickBrowse():void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				f.addEventListener(Event.SELECT, onFileSelection);
+				f.browseForOpen("Select File");
+			}
+			
+			private function onFileSelection(event:Event):void {
+				var f:File = flash.filesystem.File(event.target);
+				f.removeEventListener(Event.SELECT, onFileSelection);
+				txtFile.text = f.nativePath;
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valName" required="true" source="{txtName}" property="text" />
+	
+	<mx:Form id="form" width="100%" height="100%">
+
+		<mx:FormItem label="Tag Name" width="100%" required="true" >
+			<mx:toolTip>Used to refer to the tag in the UI.</mx:toolTip>
+			<mx:TextInput id="txtName" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Prefix" width="100%" >
+			<mx:toolTip><![CDATA[Specifies how the tag appears in Code view. When used, the tagref.prefix attribute determines the prefix of the current tag. When the attribute is defined, it overrides the value specified for the taglibrary.prefix attribute.]]></mx:toolTip>
+			<mx:TextInput id="txtPrefix" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="File" width="100%" height="100%" >
+			<mx:toolTip>References the VTML file for the tag.</mx:toolTip>
+			<mx:HBox width="100%">
+				<mx:TextInput id="txtFile" width="100%" />
+				<mx:Button label="Browse" click="onClickBrowse()"/>
+			</mx:HBox>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

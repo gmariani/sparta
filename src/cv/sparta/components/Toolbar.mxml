@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="500" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			import mx.managers.PopUpManager;
+			import mx.managers.PopUpManagerChildList;
+			import cv.sparta.tags.Toolbar;
+			import mx.core.UIComponent;
+		
+			[Bindable]
+			private var acChildItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentChildIndex:int = -1;
+			
+			public function get length():int {
+				return listChildItems.dataProvider.length;
+			}
+			
+			public static function xmlToArray(value:XML):Array {
+				var arr:Array = [];
+				for each(var f:XML in value.toolbar) {
+					var obj:Object = new Object();
+					obj.data = new Object();
+					
+					obj.data.id = "";
+					if("@id" in f) obj.data.id  = f.@id.toString();
+					
+					obj.data.label = "";
+					if("@label" in f) obj.data.label  = f.@label.toString();
+					
+					// Optional //
+					obj.data.container = "mainframe";
+					if("@container" in f) obj.data.container = f.@container.toString();
+					
+					obj.data.initiallyVisible = true;
+					if("@initiallyVisible" in f && f.@initiallyVisible.toString() == "false") obj.data.initiallyVisible = false;
+					
+					obj.data.initialPosition = "";
+					if("@initialPosition" in f) obj.data.initialPosition = f.@initialPosition.toString();
+					
+					obj.data.relativeTo = "";
+					if("@relativeTo" in f) obj.data.relativeTo = f.@relativeTo.toString();
+					
+					obj.data.childTags = ToolbarChildren.xmlToArray(f);
+					
+					arr.push(obj);
+				}
+				return arr;
+			}
+			
+			public static function arrayToString(arr:Array):String {
+				var str:String = "";
+				for(var i:String in arr) {
+					var obj:Object = arr[i];
+					str += childListLabel(obj);
+				}
+				return str;
+			}
+			
+			public function fromArray(value:Array):void {
+				reset();
+				
+				for each(var o:Object in value) {
+					acChildItems.addItem(o);
+				}
+			}
+			
+			public function toArray():Array {
+				var arr:Array = [];
+				for each(var obj:Object in acChildItems) {
+					arr.push(obj);
+				}
+				return arr;
+			}
+			
+			public function reset():void {
+				this.errorString = "";
+				acChildItems = new ArrayCollection([]);
+				listChildItems.selectedItem = null;
+			}
+			
+			private function addChildTag():void {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.label = "";
+				obj.data.container = "mainframe";
+				obj.data.initiallyVisible = true;
+				obj.data.initialPosition = "";
+				obj.data.relativeTo = "";
+				obj.data.childTags = [];
+				showChildTag(obj, -1);
+			}
+            
+            private function removeChildTag():void {
+    			acChildItems.removeItemAt(currentChildIndex);
+				currentChildIndex = -1;
+				listChildItems.selectedIndex = currentChildIndex;
+			}
+			
+			private function showChildTag(obj:Object, index:int):void {
+				currentChildIndex = index;
+				
+				var i:String;
+				var popup:cv.sparta.tags.Toolbar = PopUpManager.createPopUp(UIComponent(this.parentApplication), cv.sparta.tags.Toolbar, true, PopUpManagerChildList.APPLICATION) as cv.sparta.tags.Toolbar;
+				popup.txtID.text = obj.data.id;
+				popup.txtLabel.text = obj.data.label;
+				for(i in popup.ddContainer.dataProvider) {
+					if(popup.ddContainer.dataProvider[i].data == obj.data.container) {
+						popup.ddContainer.selectedItem = popup.ddContainer.dataProvider[i];
+						break;
+					}
+				}
+				popup.cbVisible.selected = obj.data.initiallyVisible;
+				for(i in popup.ddPosition.dataProvider) {
+					if(popup.ddPosition.dataProvider[i].data == obj.data.initialPosition) {
+						popup.ddPosition.selectedItem = popup.ddPosition.dataProvider[i];
+						break;
+					}
+				}
+				popup.txtRelative.text = obj.data.relativeTo;
+				popup.updateRelative();
+				popup.cmpChildren.data = obj.data.childTags;
+				popup.addEventListener('SAVE', saveChildTag, false, 0, true);
+				PopUpManager.centerPopUp(popup);
+			}
+			
+			private function saveChildTag(e:Event):void {
+				var popup:cv.sparta.tags.Toolbar = e.currentTarget as cv.sparta.tags.Toolbar;
+				popup.removeEventListener('SAVE', saveChildTag);
+				
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = popup.txtID.text;
+				obj.data.label = popup.txtLabel.text;
+				obj.data.container = popup.ddContainer.selectedItem.data;
+				obj.data.initiallyVisible = popup.cbVisible.selected;
+				obj.data.initialPosition = popup.ddPosition.selectedItem.data;
+				obj.data.relativeTo = popup.txtRelative.text;
+				obj.data.childTags = popup.cmpChildren.data;
+				
+				if(currentChildIndex < 0) {
+					acChildItems.addItem(obj);
+					listChildItems.selectedItem = obj;
+				} else {
+					acChildItems.setItemAt(obj, currentChildIndex);
+					listChildItems.selectedIndex = currentChildIndex;
+				}
+			}
+			
+			private static function childListLabel(obj:Object):String {
+				var str:String = "";
+				str += '<toolbar';
+				str += ' id="' + obj.data.id + '"';
+				str += ' label="' + obj.data.label + '"';
+				if(obj.data.container.length > 0) str += ' container="' + obj.data.container + '"';
+				if(obj.data.initiallyVisible == false) str += ' initiallyVisible="' + obj.data.initiallyVisible + '"';
+				if(obj.data.initialPosition.length > 0) str += ' initialPosition="' + obj.data.initialPosition + '"';
+				if(obj.data.relativeTo.length > 0) str += ' relativeTo="' + obj.data.relativeTo + '"';
+				str += '>';
+				str += ToolbarChildren.arrayToString(obj.data.childTags);
+				str += '</toolbar>';
+				
+				return str;
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listChildItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listChildItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listChildItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listChildItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					showChildTag(listChildItems.selectedItem, listChildItems.selectedIndex);
+				} else {
+					removeChildTag();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Button label="Add Toolbar" click="addChildTag()" >
+		<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+	</mx:Button>
+	
+	<mx:List 
+		editable="true" 
+		itemEditor="cv.sparta.editor.ChildEditor"
+		editorYOffset="23"
+		editorDataField="data" editorHeightOffset="7"
+		itemEditEnd="destroyListEditor(event)" 
+		itemFocusIn="initListEditor(event)"
+		id="listChildItems" wordWrap="true" variableRowHeight="true" labelFunction="childListLabel" width="100%" height="100%" dataProvider="{acChildItems}" />
+</mx:VBox>

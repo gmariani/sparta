@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="400" 
+	label="License Agreement" 
+	paddingBottom="10" paddingLeft="10" paddingRight="10" paddingTop="0"
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.containers.Form;
+			import mx.controls.TextInput;
+		
+			public function reset():void {
+				txtLicense.text = "";
+				txtLicense.errorString = "";
+				txtResID.text = "";
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				txtLicense.text = value["license-agreement"].toString();
+				
+				if("@resid" in value["license-agreement"]) txtResID.text = value["license-agreement"].@resid.toString();
+			}
+			
+			/*
+			{href }, {resid}, {source}
+			
+			resid References string with value of “resid” in resource file and displays that string after the
+			License Agreement when installing the extension.
+			*/
+			public function getXML():String {
+				var str:String = "";
+				if(txtLicense.text.length > 0) {
+					str += '<license-agreement';
+					
+					// Optional attribute for version 2.1
+					if(txtResID.text.length > 0) str += ' resid="' + txtResID.text + '"';
+					
+					str += ' ><\!\[CDATA\[';
+					str += txtLicense.text;
+					str += '\]\]></license-agreement>';
+				}
+				
+				return str;
+			}
+		]]>
+	</mx:Script>
+	<mx:StringValidator required="true" source="{txtLicense}" property="text" />
+	
+	<mx:FormHeading label="License Agreement" width="100%">
+		<mx:toolTip><![CDATA[This tag lets third-party developers include a license agreement with extensions they develop. The contents of this tag are displayed under the heading Third Party License, at the end of the new extension install license.<br/>If the license-agreement tag is omitted from the MXI file, only the default extension disclaimer is displayed.]]></mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:FormItem label="License Agreement" width="100%" height="100%" required="true">
+		<mx:toolTip><![CDATA[This tag lets third-party developers include a license agreement with extensions they develop. The contents of this tag are displayed under the heading Third Party License, at the end of the new extension install license. This tag contains a CDATA section, which you can format with any HTML tags. If text colors are unspecified, the background is gray (#585858) and the text is nearly white (#E0E0E0). To display double-byte characters, the content of the CDATA section needs to include “charset=UTF-8.” For example: <meta http-equiv=Content-Type content="text/html;charset=UTF-8">]]></mx:toolTip>
+		<mx:TextArea id="txtLicense" wordWrap="true" height="100%" width="100%" />
+	</mx:FormItem>
+	
+	<mx:FormItem label="Res ID (2.1+)" width="100%">
+		<mx:toolTip>References string with value of “resid” in resource file and displays that string after the License Agreement when installing the extension.</mx:toolTip>
+		<mx:TextInput id="txtResID" width="100%" />
+	</mx:FormItem>
+</mx:Form>

@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	xmlns:mxi="cv.sparta.tags.*" 
+	width="400" height="300" 
+	label="Extensions" 
+	creationComplete="reset()">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			
+			[Bindable]
+			public var acItems:ArrayCollection = new ArrayCollection([]);
+			
+			private var currentItemIndex:int = -1;
+			
+			public function set languages(data:ArrayCollection):void {
+				tagInsert.acLanguages = data;
+				tagRemove.acLanguages = data;
+			}
+			
+			public function get languages():ArrayCollection {
+				return tagInsert.acLanguages;
+			}
+		
+			public function reset():void {
+				acItems = new ArrayCollection([]);
+				cancel();
+			}
+			
+			public function setXML(value:XML):void {
+				reset();
+				
+				acItems = new ArrayCollection([]);
+				// Insert
+				var f:XML;
+				var obj:Object;
+				for each(f in value["configuration-changes"]["extensions-changes"]["extension-insert"]) {
+					obj = tagInsert.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+				
+				// Remove
+				for each(f in value["configuration-changes"]["extensions-changes"]["extension-remove"]) {
+					obj = tagRemove.xmlToObject(f);
+					acItems.addItem(obj);
+				}
+			}
+			
+			public function getXML():String {
+				var str:String = "";
+				
+				if(acItems.length > 0) {
+					str += '<extensions-changes>';
+					
+					for(var i:String in acItems) {
+						var obj:Object = acItems[i];
+						switch(obj.data.stackType) {
+							case "insert" :
+								str += tagInsert.objectToString(obj);
+								break;
+							case "remove" :
+								str += tagRemove.objectToString(obj);
+								break;
+						}
+					}
+					str += "</extensions-changes>";
+				}
+				
+				return str;
+			}
+			
+			private function add(type:String):void {
+				var obj:Object = new Object();
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.getEmptyData();
+						break;
+					case "remove" :
+						obj = tagRemove.getEmptyData();
+						break;
+				}
+				show(obj, -1);
+			}
+			
+			private function save(type:String):void {
+				var obj:Object = new Object();
+				switch(type) {
+					case "insert" :
+						obj = tagInsert.data;
+						break;
+					case "remove" :
+						obj = tagRemove.data;
+						break;
+				}
+				
+				if(currentItemIndex < 0) {
+					acItems.addItem(obj);
+					listItems.selectedItem = obj;
+					currentItemIndex = listItems.selectedIndex;
+				} else {
+					acItems.setItemAt(obj, currentItemIndex);
+					listItems.selectedIndex = currentItemIndex;
+				}
+				
+				vsExtensions.selectedIndex = 0;
+			}
+			
+			private function remove():void {
+				acItems.removeItemAt(currentItemIndex);
+				currentItemIndex = -1;
+				listItems.selectedIndex = currentItemIndex;
+				
+				cancel();
+			}
+			
+			private function cancel():void {
+				tagInsert.reset();
+				tagRemove.reset();
+				vsExtensions.selectedIndex = 0;
+			}
+			
+			private function show(obj:Object, index:int):void {
+				currentItemIndex = index;
+				
+				var i:String;
+				switch(obj.data.stackType) {
+					case "insert" :
+						tagInsert.data = obj;
+						vsExtensions.selectedIndex = 1;
+						break;
+					case "remove" :
+						tagRemove.data = obj;
+						vsExtensions.selectedIndex = 2;
+						break;
+				}
+			}
+			
+			private function listLabel(obj:Object):String {
+				switch(obj.data.stackType) {
+					case "insert" :
+						return tagInsert.objectToString(obj);
+					case "remove" :
+						return tagRemove.objectToString(obj);
+					default :
+						return "";
+				}
+			}
+			
+			private function initListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.addEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.addEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function destroyListEditor(e:ListEvent):void {
+				listItems.itemEditorInstance.removeEventListener("SAVE", listEditorHandler);
+				listItems.itemEditorInstance.removeEventListener("REMOVE", listEditorHandler);
+			}
+			
+			private function listEditorHandler(e:Event):void {
+				if(e.type == "SAVE") {
+					show(listItems.selectedItem, listItems.selectedIndex);
+				} else {
+					remove();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:FormHeading label="Extensions Changes" width="100%">
+		<mx:toolTip>Container tag that describes any changes to the Extensions.txt file, such as adding or removing extensions that you can open in Dreamweaver.</mx:toolTip>
+	</mx:FormHeading>
+	
+	<mx:ViewStack id="vsExtensions" width="100%" height="100%">
+		<mx:VBox width="100%" height="100%">
+			<mx:HBox width="100%" horizontalAlign="right" >
+				<mx:Button label="Insert Extension" click="add('insert')" toolTip="Describes a new extension that Dreamweaver can open." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+				<mx:Button label="Remove Extension" click="add('remove')" toolTip="Indicates an extension to remove from the Extensions.txt file." >
+					<mx:icon>@Embed(source='../../../assets/icons/addIcon.png')</mx:icon>
+				</mx:Button>
+			</mx:HBox>
+			
+			<mx:List 
+				editable="true" 
+				itemEditor="cv.sparta.editor.ChildEditor"
+				editorYOffset="23"
+				editorDataField="data" editorHeightOffset="7"
+				itemEditEnd="destroyListEditor(event)" 
+				itemFocusIn="initListEditor(event)"
+				id="listItems" width="100%" height="100%" labelFunction="listLabel" dataProvider="{acItems}" />
+		</mx:VBox>
+		
+		<mxi:ExtensionsInsert id="tagInsert" width="100%" height="100%" save="save('insert')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+		
+		<mxi:ExtensionsRemove id="tagRemove" width="100%" height="100%" save="save('remove')" cancel="cancel()" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" />
+	</mx:ViewStack>
+</mx:VBox>

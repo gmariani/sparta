@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" title="Dreamweaver Insertbar Check Button" width="500">
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtID.text = obj.data.id;
+				txtImage.text = obj.data.image;
+				txtChecked.text = obj.data.checked;
+				txtShowIf.text = obj.data.showIf;
+				txtEnabled.text = obj.data.enabled;
+				txtCommand.text = obj.data.command;
+				txtFile.text = obj.data.file;
+				txtTag.text = obj.data.tag;
+				txtName.text = obj.data.name;
+				cbCode.selected =obj.data.codeOnly;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = txtID.text;
+				obj.data.image = txtImage.text;
+				obj.data.checked = txtChecked.text;
+				obj.data.showIf = txtShowIf.text;
+				obj.data.enabled = txtEnabled.text;
+				obj.data.command = txtCommand.text;
+				obj.data.file = txtFile.text;
+				obj.data.tag = txtTag.text;
+				obj.data.name = txtName.text;
+				obj.data.codeOnly = cbCode.selected;
+				obj.data.tagType = "CheckButton";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.image = "";
+				obj.data.checked = "";
+				obj.data.showIf = "";
+				obj.data.enabled = "";
+				obj.data.command = "";
+				obj.data.file = "";
+				obj.data.tag = "";
+				obj.data.name = "";
+				obj.data.codeOnly = false;
+				obj.data.tagType = "CheckButton";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id  = f.@id.toString();
+				
+				obj.data.image = "";
+				if("@image" in f) obj.data.image = f.@image.toString();
+				
+				obj.data.checked = "";
+				if("@checked" in f) obj.data.checked = f.@checked.toString();
+				
+				// Optional //
+				obj.data.showIf = "";
+				if("@showIf" in f) obj.data.showIf = f.@showIf.toString();
+				
+				obj.data.enabled = "";
+				if("@enabled" in f) obj.data.enabled = f.@enabled.toString();
+				
+				obj.data.command = "";
+				if("@command" in f) obj.data.command = f.@command.toString();
+				
+				obj.data.file = "";
+				if("@file" in f) obj.data.file = f.@file.toString();
+				
+				obj.data.tag = "";
+				if("@tag" in f) obj.data.tag = f.@tag.toString();
+				
+				obj.data.name = "";
+				if("@name" in f) obj.data.name = f.@name.toString();
+				
+				obj.data.codeOnly = false;
+				if("@codeOnly" in f && f.@codeOnly == "true") obj.data.codeOnly = true;
+				
+				obj.data.tagType = "CheckButton";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<checkbutton';
+				str += ' id="' + obj.data.id + '"';
+				str += ' image="' + obj.data.image + '"';
+				str += ' checked="' + obj.data.checked + '"';
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				if(obj.data.enabled.length > 0) str += ' enabled="' + obj.data.enabled + '"';
+				if(obj.data.command.length > 0) str += ' command="' + obj.data.command + '"';
+				if(obj.data.file.length > 0) str += ' file="' + obj.data.file + '"';
+				if(obj.data.tag.length > 0) str += ' tag="' + obj.data.tag + '"';
+				if(obj.data.name.length > 0) str += ' name="' + obj.data.name + '"';
+				if(obj.data.codeOnly) str += ' codeOnly="' + obj.data.codeOnly + '"';
+				str += ' />';
+				return str;
+			}
+			
+			public function reset():void {
+				txtID.text = "";
+				txtImage.text = "";
+				txtChecked.text = "";
+				txtShowIf.text = "";
+				txtEnabled.text = "";
+				txtCommand.text = "";
+				txtFile.text = "";
+				txtTag.text = "";
+				txtName.text = "";
+				cbCode.selected = false;
+			}
+			
+			protected function validateForm():void {
+            	var validatorArr:Array = [valID, valImage, valChecked];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Check Button...", Alert.OK);
+                }
+            }
+            
+            protected function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            protected function onClickBrowse(target:String):void {
+				var f:flash.filesystem.File = flash.filesystem.File.desktopDirectory;
+				switch(target) {
+					case "file" : f.addEventListener(Event.SELECT, onFileSelection); break;
+					case "image" : f.addEventListener(Event.SELECT, onImageSelection); break;
+				}
+				f.browseForOpen("Select File");
+			}
+			
+			protected function onFileSelection(event:Event):void {
+				var f:File = flash.filesystem.File(event.target);
+				f.removeEventListener(Event.SELECT, onFileSelection);
+				txtFile.text = f.nativePath;
+			}
+			
+			protected function onImageSelection(event:Event):void {
+				var f:File = flash.filesystem.File(event.target);
+				f.removeEventListener(Event.SELECT, onFileSelection);
+				txtImage.text = f.nativePath;
+			}
+			
+			private function appendChecked(event:Event):void {
+				txtChecked.text += ddChecked.selectedItem.data;
+			}
+			
+			private function appendShowIf(event:Event):void {
+				txtShowIf.text += ddShowIf.selectedItem.data;
+			}
+			
+			private function appendEnabled(event:Event):void {
+				txtEnabled.text += ddEnabled.selectedItem.data;
+			}
+			
+			private function dataTip(value:Object):String {
+				return value.tip || "";
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valID" required="true" source="{txtID}" property="text" />
+	<mx:StringValidator id="valImage" required="true" source="{txtImage}" property="text" />
+	<mx:StringValidator id="valChecked" required="true" source="{txtChecked}" property="text" />
+
+	<mx:Form id="form" width="100%" height="100%">
+
+		<mx:FormItem label="ID" width="100%" required="true" >
+			<mx:toolTip>The id attribute is an identifier for the buttons that appear on the Insert bar. The id attribute must be unique for the element within the file.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Image" width="100%" required="true" >
+			<mx:toolTip>This attribute specifies the path, relative to the Dreamweaver Configuration folder, to the icon file that appears on the Insert bar. The icon can be in any format that Dreamweaver can render, but typically it is in GIF or JPEG file format, with a size of 18 x 18 pixels.</mx:toolTip>
+			<mx:HBox width="100%">
+				<mx:TextInput id="txtImage" width="100%" />
+				<mx:Button label="Browse" click="onClickBrowse('image')"/>
+			</mx:HBox>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Checked" width="100%" required="true" >
+			<mx:toolTip>The checked attribute is required if you use the checkbutton tag. The item is checked if the DW_enabler value is true.</mx:toolTip>
+			<mx:TextInput id="txtChecked" width="100%" />
+			<mx:List id="ddChecked" variableRowHeight="true" wordWrap="true" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendChecked(event)" showDataTips="true">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="_SERVERMODEL_ASP" label="Server Model ASP" />
+		                <mx:Object data="_SERVERMODEL_ASPNET" label="Server Model ASP.NET" />
+		                <mx:Object data="_SERVERMODEL_JSP" label="Server Model JSP" />
+		                <mx:Object data="_SERVERMODEL_CFML" label="Server Model CFML" tip="For all versions of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_CFML_UD4" label="Server Model CFML UD4" tip="Only for UltraDev v4 of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_PHP" label="Server Model PHP" />
+		                <mx:Object data="_FILE_TEMPLATE" label="File Template" />
+		                <mx:Object data="_VIEW_CODE" label="View Code" />
+		                <mx:Object data="_VIEW_DESIGN" label="View Design" />
+		                <mx:Object data="_VIEW_LAYOUT" label="View Layout" />
+		                <mx:Object data="_VIEW_EXPANDED_TABLES" label="View Expanded Tables" />
+		                <mx:Object data="_VIEW_STANDARD" label="View Standard" />
+		           </mx:Array>
+				</mx:dataProvider>
+			</mx:List>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Show If" width="100%" >
+			<mx:toolTip>This attribute specifies that this button should appear on the Insert bar only if the given Dreamweaver enabler is a true value. If you do not specify showIf, the button always appears.</mx:toolTip>
+			<mx:TextInput id="txtShowIf" width="100%" />
+			<mx:List id="ddShowIf" variableRowHeight="true" wordWrap="true" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendShowIf(event)" showDataTips="true">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="_SERVERMODEL_ASP" label="Server Model ASP" />
+		                <mx:Object data="_SERVERMODEL_ASPNET" label="Server Model ASP.NET" />
+		                <mx:Object data="_SERVERMODEL_JSP" label="Server Model JSP" />
+		                <mx:Object data="_SERVERMODEL_CFML" label="Server Model CFML" tip="For all versions of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_CFML_UD4" label="Server Model CFML UD4" tip="Only for UltraDev v4 of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_PHP" label="Server Model PHP" />
+		                <mx:Object data="_FILE_TEMPLATE" label="File Template" />
+		                <mx:Object data="_VIEW_CODE" label="View Code" />
+		                <mx:Object data="_VIEW_DESIGN" label="View Design" />
+		                <mx:Object data="_VIEW_LAYOUT" label="View Layout" />
+		                <mx:Object data="_VIEW_EXPANDED_TABLES" label="View Expanded Tables" />
+		                <mx:Object data="_VIEW_STANDARD" label="View Standard" />
+		           </mx:Array>
+				</mx:dataProvider>
+			</mx:List>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Enabled" width="100%" >
+			<mx:toolTip>This attribute specifies that the item is available to the user if the DW_enabler value is true. If you do not specify the enabled function, the item defaults to always enabled.</mx:toolTip>
+			<mx:TextInput id="txtEnabled" width="100%" />
+			<mx:List id="ddEnabled" variableRowHeight="true" wordWrap="true" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendEnabled(event)" showDataTips="true">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="_SERVERMODEL_ASP" label="Server Model ASP" />
+		                <mx:Object data="_SERVERMODEL_ASPNET" label="Server Model ASP.NET" />
+		                <mx:Object data="_SERVERMODEL_JSP" label="Server Model JSP" />
+		                <mx:Object data="_SERVERMODEL_CFML" label="Server Model CFML" tip="For all versions of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_CFML_UD4" label="Server Model CFML UD4" tip="Only for UltraDev v4 of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_PHP" label="Server Model PHP" />
+		                <mx:Object data="_FILE_TEMPLATE" label="File Template" />
+		                <mx:Object data="_VIEW_CODE" label="View Code" />
+		                <mx:Object data="_VIEW_DESIGN" label="View Design" />
+		                <mx:Object data="_VIEW_LAYOUT" label="View Layout" />
+		                <mx:Object data="_VIEW_EXPANDED_TABLES" label="View Expanded Tables" />
+		                <mx:Object data="_VIEW_STANDARD" label="View Standard" />
+		           </mx:Array>
+				</mx:dataProvider>
+			</mx:List>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Command (Script)" width="100%" >
+			<mx:toolTip><![CDATA[Instead of referring Dreamweaver to an HTML file that contains the code to insert, you use this tag to specify a command that Dreamweaver performs when the button is clicked.]]></mx:toolTip>
+			<mx:TextInput id="txtCommand" width="100%"  height="100"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="File" width="100%" height="100%" >
+			<mx:toolTip>The file attribute is optional for other types of items. The file attribute specifies the path, relative to the Configuration folder, of a command file that contains JavaScript functions to populate, update, and execute the item. The file attribute overrides the enabled, checked, value, update, domRequired, menuID, showIf, and command attributes. In general, if you specify a command file with the file attribute, Dreamweaver ignores all the equivalent attributes that are specified in the tag.</mx:toolTip>
+			<mx:HBox width="100%">
+				<mx:TextInput id="txtFile" width="100%" />
+				<mx:Button label="Browse" click="onClickBrowse('file')"/>
+			</mx:HBox>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Tag" width="100%" >
+			<mx:toolTip><![CDATA[This attribute tells Dreamweaver to invoke a Tag editor. In Code view, if the tag attribute is defined and the user clicks the object, Dreamweaver invokes the Tag dialog box. In Code view, if you specify the tag and command attributes, Dreamweaver invokes the Tag editor. In Design view, if codeOnly="TRUE" and you do not specify the file attribute, Dreamweaver invokes Code and Design view, places focus in the code, and invokes the Tag editor.]]></mx:toolTip>
+			<mx:TextInput id="txtTag" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Name" width="100%" >
+			<mx:toolTip><![CDATA[This attribute specifies how often the enabled, checked, showif, and value handlers should run to update the visible state of the item. The update attribute is equivalent to the getUpdateFrequency() function in a toolbar command file. You must specify the update frequency for toolbar items because these items are always visible, unlike menu items. For this reason, you should always select the lowest frequency possible and make sure your handlers for the enabled, checked, and value handlers are as simple as possible.<br/>The following list shows the possible handlers for update_frequency_list, from least to most frequent. If you do not specify the update attribute, the update frequency defaults to onEdit frequency. You can specify multiple update frequencies, separated by commas. The handlers run on any of the following specified events:<br/>• onServerModelChange executes when the server model of the current page changes.<br/>• onCodeViewSyncChange executes when the Code view becomes in or out of sync with the Design view.<br/>• onViewChange executes whenever the user switches focus between Code view and Design view or when the user changes between Code view, Design view, or Code and Design view.<br/>• onEdit executes whenever the document is edited in Design view. Changes that you make in Code view do not trigger this event.<br/>• onSelChange executes whenever the selection changes in Design view. Changes that you make in Code view do not trigger this event.<br/>• onEveryIdle executes regularly when the application is idle. This can be time-consuming because the enabler/checked/showif/value handlers are running often. It should be used only for buttons that need to have their enable state changed at special times, and handlers should be quick.<br/>Note: In all these cases, Dreamweaver actually executes the handlers after the specified event occurs, when the application is in a quiescent state. It is not guaranteed that your handlers run after every edit or selection change; your handlers run soon after a batch of edits or selection changes occur. The handlers are guaranteed to run when the user clicks on a toolbar item.]]></mx:toolTip>
+			<mx:TextInput id="txtName" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Code Only?" width="100%" >
+			<mx:toolTip>As with menus, the domRequired attribute specifies whether the Design view should be synchronized with the Code view before Dreamweaver runs the associated command. If you do not specify this attribute, it defaults to a true value. This attribute is equivalent to the isDOMRequired() function in a toolbar command file.</mx:toolTip>
+			<mx:CheckBox id="cbCode" />
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

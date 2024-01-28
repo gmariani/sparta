@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" 
+	width="500" 
+	title="Dreamweaver Insertbar Separator">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtShowIf.text = obj.data.showIf;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.showIf = txtShowIf.text;
+				obj.data.tagType = "Separator";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.showIf = "";
+				obj.data.tagType = "Separator";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.showIf = "";
+				if("@showIf" in f) obj.data.showIf = f.@showIf.toString();
+				
+				obj.data.tagType = "Separator";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = "<separator";
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				str += " />";
+				return str;
+			}
+			
+			public function reset():void {
+				txtShowIf.text = "";
+			}
+			
+			private function validateForm():void {
+            	/*var validatorArr:Array = [];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {*/
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                /*} else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Separator...", Alert.OK);
+                }*/
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            private function appendShowIf(event:Event):void {
+				txtShowIf.text += ddShowIf.selectedItem.data;
+			}
+			
+			private function dataTip(value:Object):String {
+				return value.tip || "";
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Form width="100%" height="100%">
+		
+		<mx:FormItem label="Show If" width="100%" >
+			<mx:toolTip>This attribute specifies that this button should appear on the Insert bar only if the given Dreamweaver enabler is a true value. If you do not specify showIf, the button always appears.</mx:toolTip>
+			<mx:TextInput id="txtShowIf" width="100%" />
+			<mx:List id="ddShowIf" variableRowHeight="true" wordWrap="true" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendShowIf(event)" showDataTips="true">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="_SERVERMODEL_ASP" label="Server Model ASP" />
+		                <mx:Object data="_SERVERMODEL_ASPNET" label="Server Model ASP.NET" />
+		                <mx:Object data="_SERVERMODEL_JSP" label="Server Model JSP" />
+		                <mx:Object data="_SERVERMODEL_CFML" label="Server Model CFML" tip="For all versions of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_CFML_UD4" label="Server Model CFML UD4" tip="Only for UltraDev v4 of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_PHP" label="Server Model PHP" />
+		                <mx:Object data="_FILE_TEMPLATE" label="File Template" />
+		                <mx:Object data="_VIEW_CODE" label="View Code" />
+		                <mx:Object data="_VIEW_DESIGN" label="View Design" />
+		                <mx:Object data="_VIEW_LAYOUT" label="View Layout" />
+		                <mx:Object data="_VIEW_EXPANDED_TABLES" label="View Expanded Tables" />
+		                <mx:Object data="_VIEW_STANDARD" label="View Standard" />
+		           </mx:Array>
+				</mx:dataProvider>
+			</mx:List>
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>

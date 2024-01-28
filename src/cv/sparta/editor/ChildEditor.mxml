@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="30">
+	<mx:Button label="Edit" click="dispatchEvent(new Event('SAVE'))" />
+	<mx:Button label="Remove" click="dispatchEvent(new Event('REMOVE'))">
+		<mx:icon>@Embed(source='../../../assets/icons/removeIcon.png')</mx:icon>
+	</mx:Button>
+</mx:HBox>

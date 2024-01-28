@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow 
+	xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:comp="cv.sparta.components.*" 
+	width="500" 
+	title="Dreamweaver Insertbar Category" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import mx.events.ValidationResultEvent;
+			import mx.validators.Validator;
+			import mx.controls.Alert;
+			import cv.sparta.components.InsertBarChildren;
+			
+			override public function set data(obj:Object):void {
+				reset();
+				
+				txtID.text = obj.data.id;
+				txtFolder.text = obj.data.folder;
+				txtShowIf.text = obj.data.showIf;
+				cmpInsertBar.data = obj.data.childTags;
+			}
+			
+			override public function get data():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = txtID.text;
+				obj.data.folder = txtFolder.text;
+				obj.data.showIf = txtShowIf.text;
+				obj.data.childTags = cmpInsertBar.data as Array;
+				obj.data.tagType = "Category";
+				return obj;
+			}
+			
+			public static function getEmptyData():Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				obj.data.id = "";
+				obj.data.folder = "";
+				obj.data.showIf = "";
+				obj.data.childTags = [];
+				obj.data.tagType = "Category";
+				return obj;
+			}
+			
+			public static function xmlToObject(f:XML):Object {
+				var obj:Object = new Object();
+				obj.data = new Object();
+				
+				obj.data.id = "";
+				if("@id" in f) obj.data.id  = f.@id.toString();
+				
+				// Optional //
+				obj.data.folder = "";
+				if("@folder" in f) obj.data.folder = f.@folder.toString();
+				
+				obj.data.showIf = "";
+				if("@showIf" in f) obj.data.showIf = f.@showIf.toString();
+				
+				obj.data.childTags = cv.sparta.components.InsertBarChildren.xmlToArray(f);
+				
+				obj.data.tagType = "Category";
+				
+				return obj;
+			}
+			
+			public static function objectToString(obj:Object):String {
+				var str:String = '<category';
+				str += ' id="' + obj.data.id + '"';
+				if(obj.data.folder.length > 0) str += ' folder="' + obj.data.folder + '"';
+				if(obj.data.showIf.length > 0) str += ' showIf="' + obj.data.showIf + '"';
+				str += '>';
+				str += cv.sparta.components.InsertBarChildren.arrayToString(obj.data.childTags);
+				str += '</category>';
+				return str;
+			}
+			
+			public function reset():void {
+				txtID.text = "";
+				txtFolder.text = "";
+				txtShowIf.text = "";
+				cmpInsertBar.reset();
+			}
+			
+			private function validateForm():void {
+            	var validatorArr:Array = [valID, valInsertbarComp];
+            	var validatorErrorArray:Array = Validator.validateAll(validatorArr);
+            	if (validatorErrorArray.length == 0) {
+                    dispatchEvent(new Event('SAVE'));
+                    resetForm();
+                } else {
+                    var err:ValidationResultEvent;
+                    var errorMessageArray:Array = [];
+                    for each (err in validatorErrorArray) {
+                    	var errField:String;
+                    	if(err.currentTarget.source.parent is HBox) {
+                    		errField = FormItem(err.currentTarget.source.parent.parent).label;
+                    	} else {
+                    		errField = FormItem(err.currentTarget.source.parent).label;
+                    	}
+                        errorMessageArray.push(errField + ": " + err.message);
+                    }
+                    Alert.show(errorMessageArray.join("\n\n"), "Invalid Category...", Alert.OK);
+                }
+            }
+            
+            private function resetForm():void {
+            	PopUpManager.removePopUp(this);
+            }
+            
+            private function appendShowIf(event:Event):void {
+				txtShowIf.text += ddShowIf.selectedItem.data;
+			}
+			
+			private function dataTip(value:Object):String {
+				return value.tip || "";
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:StringValidator id="valID" required="true" source="{txtID}" property="text" />
+	<mx:NumberValidator id="valInsertbarComp" source="{cmpInsertBar}" property="length" minValue="1" lowerThanMinError="Must have atleast one child tag." />
+	
+	<mx:Form id="form" width="100%" height="100%">
+		
+		<mx:FormItem label="Category ID" width="100%" required="true" >
+			<mx:toolTip>The id attribute is an identifier for the buttons that appear on the Insert bar. The id attribute must be unique for the element within the file.</mx:toolTip>
+			<mx:TextInput id="txtID" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Folder" width="100%" >
+			<mx:toolTip></mx:toolTip>
+			<mx:TextInput id="txtFolder" width="100%" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="Show If" width="100%" >
+			<mx:toolTip>This attribute specifies that this button should appear on the Insert bar only if the given Dreamweaver enabler is a true value. If you do not specify showIf, the button always appears.</mx:toolTip>
+			<mx:TextInput id="txtShowIf" width="100%" />
+			<mx:List id="ddShowIf" variableRowHeight="true" wordWrap="true" dataTipFunction="dataTip" width="100%" height="75" itemClick="appendShowIf(event)" showDataTips="true">
+				<mx:dataProvider>
+					<mx:Array>
+		                <mx:Object data="_SERVERMODEL_ASP" label="Server Model ASP" />
+		                <mx:Object data="_SERVERMODEL_ASPNET" label="Server Model ASP.NET" />
+		                <mx:Object data="_SERVERMODEL_JSP" label="Server Model JSP" />
+		                <mx:Object data="_SERVERMODEL_CFML" label="Server Model CFML" tip="For all versions of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_CFML_UD4" label="Server Model CFML UD4" tip="Only for UltraDev v4 of Adobe ColdFusion" />
+		                <mx:Object data="_SERVERMODEL_PHP" label="Server Model PHP" />
+		                <mx:Object data="_FILE_TEMPLATE" label="File Template" />
+		                <mx:Object data="_VIEW_CODE" label="View Code" />
+		                <mx:Object data="_VIEW_DESIGN" label="View Design" />
+		                <mx:Object data="_VIEW_LAYOUT" label="View Layout" />
+		                <mx:Object data="_VIEW_EXPANDED_TABLES" label="View Expanded Tables" />
+		                <mx:Object data="_VIEW_STANDARD" label="View Standard" />
+		           </mx:Array>
+				</mx:dataProvider>
+			</mx:List>
+		</mx:FormItem>
+		
+		<mx:FormItem label="Child Tags" width="100%" required="true">
+			<comp:InsertBarChildren id="cmpInsertBar" width="100%" height="200" />
+		</mx:FormItem>
+		
+		<mx:FormItem>
+			<mx:HBox>
+				<mx:Button label="Ok" click="validateForm()"/>
+				<mx:Button label="Cancel" click="resetForm()"/>
+			</mx:HBox>
+		</mx:FormItem>
+	</mx:Form>
+</mx:TitleWindow>
