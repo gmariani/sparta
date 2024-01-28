@@ -12,6 +12,18 @@
 - Tool-Tips describing every feature
 - Create mxi files for Fireworks, Dreamweaver and Flash
 
+![Default UI](/assets/sparta1.jpg)
+*Default UI*
+
+![Open File - Extension Section](/assets/sparta2.jpg)
+*Open File - Extension Section*
+
+![Open File - Products Section](/assets/sparta3.jpg)
+*Open File - Products Section*
+
+![Open File - Files Section](/assets/sparta4.jpg)
+*Open File - Files Section*
+
 ## Usage
 - Open .sparta
 - Go to File->Open
